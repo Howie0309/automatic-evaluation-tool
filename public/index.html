@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Judge Studio · 自动评估工作台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Judge Studio 首页">
+        <span class="brand-mark">J</span>
+        <span><strong>Judge Studio</strong><small>AI Evaluation Workspace</small></span>
+      </a>
+      <div class="top-actions">
+        <span class="service"><i></i> 服务已连接</span>
+        <button class="ghost-button" id="resetButton" type="button">重置工作台</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">AUTOMATED EVALUATION</span>
+          <h1>把评估标准说清楚，<br><em>剩下的交给模型。</em></h1>
+          <p>配置评审提示词与模型，上传 Excel，一次完成批量评估、结果预览和导出。</p>
+        </div>
+        <div class="stepper" aria-label="工作流程">
+          <button class="step active" data-target="configSection"><b>01</b><span>评审配置<small>Prompt & Model</small></span></button>
+          <button class="step" data-target="dataSection"><b>02</b><span>数据导入<small>Upload Excel</small></span></button>
+          <button class="step" data-target="runSection"><b>03</b><span>运行与结果<small>Run & Preview</small></span></button>
+        </div>
+      </section>
+
+      <section class="panel" id="configSection">
+        <div class="section-heading">
+          <div><span class="section-number">01</span><h2>评审配置</h2></div>
+          <p>配置会自动保存在本机；API Key 仅保留到当前浏览器会话结束。</p>
+        </div>
+        <div class="config-grid">
+          <div class="field span-2">
+            <div class="label-row"><label for="systemPrompt">System Prompt</label><span>定义评审员的角色和原则</span></div>
+            <textarea id="systemPrompt" rows="5">你是一个严格、稳定的质量评审员。请根据给定标准评估回答质量，仅输出合法 JSON 对象，不要输出 Markdown 或额外文字。</textarea>
+            <div class="output-variables">
+              <div><span>输出变量</span><small>从当前 Prompt 的 JSON 字段自动识别，仅用于提示</small></div>
+              <div class="output-chips" id="outputVariables"><code>自由文本 / 任意结构</code></div>
+            </div>
+          </div>
+          <div class="field span-2">
+            <div class="label-row"><label for="userPrompt">User Prompt 模板</label><span>支持 Excel 列名变量</span></div>
+            <textarea id="userPrompt" rows="7">请评估下面回答的质量。
+
+问题：{{query}}
+回答：{{answer}}
+
+请返回：
+{"score": 0到10之间的整数, "reason": "简短说明评分理由"}</textarea>
+            <div class="template-help">可用变量 <code>{{query}}</code> <code>{{answer}}</code> <span id="extraVariables"></span></div>
+          </div>
+          <div class="field">
+            <label for="provider">服务商</label>
+            <select id="provider">
+              <option value="deepseek">DeepSeek</option>
+              <option value="openai">OpenAI</option>
+              <option value="siliconflow">硅基流动</option>
+              <option value="custom">自定义 / OpenAI 兼容</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="model">评估模型</label>
+            <div class="input-with-action"><input id="model" list="modelSuggestions" value="deepseek-chat"><datalist id="modelSuggestions"></datalist><span>可输入</span></div>
+          </div>
+          <div class="field span-2">
+            <label for="endpoint">API 地址</label>
+            <input id="endpoint" value="https://api.deepseek.com/v1">
+          </div>
+          <div class="field span-2 key-field">
+            <div class="label-row"><label for="apiKey">API Key</label><span class="secure-note">仅用于本次会话 · 不写入磁盘</span></div>
+            <div class="key-input"><input id="apiKey" type="password" autocomplete="off" placeholder="粘贴 API Key"><button id="toggleKey" type="button" aria-label="显示或隐藏 API Key">显示</button></div>
+          </div>
+          <div class="field">
+            <div class="label-with-help"><label for="temperature">温度 <output id="temperatureValue">0</output></label><button class="help-dot" type="button" data-help="temperature" aria-label="温度说明">?</button></div>
+            <input id="temperature" type="range" min="0" max="1" step="0.1" value="0">
+            <small class="field-help" id="temperatureHelp">越低越稳定；自动评估建议设为 0。</small>
+          </div>
+          <div class="field">
+            <div class="label-with-help"><label for="reasoningEffort">思考强度</label><button class="help-dot" type="button" data-help="reasoning" aria-label="思考强度说明">?</button></div>
+            <select id="reasoningEffort"></select>
+            <small class="field-help" id="reasoningHelp">跟随所选模型的默认设置。</small>
+          </div>
+          <div class="field span-2">
+            <div class="label-row"><label for="scorePath">分数字段路径（可选）</label><span>仅用于统计，不限制模型输出</span></div>
+            <input id="scorePath" value="score" placeholder="例如 score、result.score；留空则不提取分数">
+            <small class="field-help">模型可以返回任意格式。这里只尝试从指定字段读取数字，用于计算平均分和分数区间。</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="dataSection">
+        <div class="section-heading">
+          <div><span class="section-number">02</span><h2>上传评估文件</h2></div>
+          <p>支持 .xlsx，首行为列名，单个文件最大 20 MB。</p>
+        </div>
+        <label class="dropzone" id="dropzone" for="fileInput">
+          <input id="fileInput" type="file" accept=".xlsx" hidden>
+          <span class="upload-icon">↥</span>
+          <strong>拖拽 Excel 到这里，或点击选择</strong>
+          <small>上传后会自动保存到本机服务</small>
+        </label>
+
+        <div class="dataset-card hidden" id="datasetCard">
+          <div class="file-summary">
+            <div class="file-icon">XL</div>
+            <div><strong id="fileName">—</strong><span id="fileMeta">—</span></div>
+            <button id="removeFile" type="button" aria-label="移除文件">×</button>
+          </div>
+          <div class="mapping-row">
+            <div class="field"><label for="sheetSelect">工作表</label><select id="sheetSelect"></select></div>
+            <div class="field"><label for="queryColumn">问题列</label><select id="queryColumn"></select></div>
+            <div class="field"><label for="answerColumn">回答列</label><select id="answerColumn"></select></div>
+          </div>
+          <div class="variable-mapping-card">
+            <div class="variable-mapping-heading">
+              <div><strong>Prompt 变量映射</strong><span>将 User Prompt 中的变量对应到 Excel 列</span></div>
+              <small>已自动匹配可识别字段</small>
+            </div>
+            <div class="variable-mapping-list" id="promptMappings"></div>
+            <p class="mapping-warning hidden" id="mappingWarning"></p>
+          </div>
+          <div class="range-card">
+            <div class="range-copy">
+              <strong>评估数据范围</strong>
+              <span>按数据序号选择，不包含 Excel 表头</span>
+            </div>
+            <div class="range-inputs">
+              <label for="rangeStart">从 <input id="rangeStart" type="number" min="1" value="1"> 条</label>
+              <i>—</i>
+              <label for="rangeEnd">到 <input id="rangeEnd" type="number" min="1" value="1"> 条</label>
+            </div>
+            <div class="range-presets">
+              <button type="button" data-range="all">全部</button>
+              <button type="button" data-range="first100">前 100 条</button>
+              <button type="button" data-range="last100">后 100 条</button>
+            </div>
+          </div>
+          <div class="range-summary" id="rangeSummary">将评估 0 条数据</div>
+          <div class="preview-head"><div><h3>数据预览</h3><span id="rowCount">0 条数据</span></div><span>显示前 8 条</span></div>
+          <div class="table-wrap"><table id="dataPreview"></table></div>
+        </div>
+      </section>
+
+      <section class="panel" id="runSection">
+        <div class="section-heading run-heading">
+          <div><span class="section-number">03</span><h2>运行与结果</h2></div>
+          <div class="run-controls">
+            <label>并发数 <select id="concurrency"><option>1</option><option selected>3</option><option>5</option><option>8</option></select></label>
+            <label>重试次数 <select id="retryCount"><option>0</option><option>1</option><option selected>2</option><option>3</option></select></label>
+            <button class="secondary-button run-action" id="pauseButton" type="button" disabled>Ⅱ 暂停</button>
+            <button class="danger-button run-action" id="stopButton" type="button" disabled>■ 中断</button>
+            <button class="primary-button" id="runButton" type="button" disabled><span>▶</span> 开始评估</button>
+          </div>
+        </div>
+
+        <div class="empty-state" id="emptyResults">
+          <div class="empty-mark">⌁</div><strong>结果会显示在这里</strong><p>上传数据并完成字段映射后，即可开始评估。</p>
+        </div>
+
+        <div class="results hidden" id="results">
+          <div class="progress-block" id="progressBlock">
+            <div><strong id="progressText">准备运行</strong><span id="progressMeta">0 / 0</span></div>
+            <div class="progress-track"><i id="progressBar"></i></div>
+          </div>
+          <div class="metrics">
+            <article><span>平均分</span><strong id="avgScore">—</strong><small>可选分数字段统计</small></article>
+            <article><span>已完成</span><strong id="completeCount">0</strong><small id="successRate">请求成功率 —</small></article>
+            <article><span>最高 / 最低</span><strong id="rangeScore">—</strong><small>分数区间</small></article>
+            <article><span>平均耗时</span><strong id="avgTime">—</strong><small>每条数据</small></article>
+          </div>
+          <div class="result-toolbar">
+            <div><h3>评估结果</h3><span id="resultCount">0 条结果</span></div>
+            <div><input id="resultSearch" placeholder="搜索问题、回答或模型输出"><button class="secondary-button" id="exportButton" type="button">导出 CSV</button></div>
+          </div>
+          <div class="table-wrap"><table id="resultTable"></table></div>
+        </div>
+
+        <div class="history-block">
+          <div class="history-heading">
+            <div><h3>已保存记录</h3><span>原始 Excel、JSON 和 CSV 保存在本机 data 目录</span></div>
+            <button class="secondary-button" id="refreshHistory" type="button">刷新</button>
+          </div>
+          <div class="history-list" id="historyList"><p class="history-empty">暂无已保存的评估记录</p></div>
+        </div>
+      </section>
+    </main>
+    <footer>Judge Studio <span>·</span> 更清晰的 AI 评估工作流</footer>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="help-popover hidden" id="helpPopover" role="dialog"><button type="button" id="closeHelp">×</button><h3 id="helpTitle"></h3><p id="helpText"></p></div>
+  <dialog id="detailDialog"><button class="dialog-close" id="closeDialog" type="button">×</button><span class="eyebrow">EVALUATION DETAIL</span><h2>评估详情</h2><div id="detailContent"></div></dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
