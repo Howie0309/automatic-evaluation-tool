@@ -4,6 +4,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
 import { callJudge } from './lib/evaluator.js';
+import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage.js';
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
 const port = Number(process.env.PORT || 3077);
@@ -20,6 +21,16 @@ const mime = {
 function json(res, status, data) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(data));
+}
+
+function download(res, { content, contentType, fileName }) {
+  const encodedName = encodeURIComponent(fileName);
+  res.writeHead(200, {
+    'content-type': contentType,
+    'content-disposition': `attachment; filename="download"; filename*=UTF-8''${encodedName}`,
+    'content-length': content.length
+  });
+  res.end(content);
 }
 
 function readBody(req) {
@@ -41,11 +52,14 @@ function readBody(req) {
 }
 
 async function handleApi(req, res) {
-  if (req.method === 'GET' && req.url === '/api/health') {
+  const url = new URL(req.url || '/', 'http://localhost');
+  const pathname = url.pathname;
+
+  if (req.method === 'GET' && pathname === '/api/health') {
     return json(res, 200, { ok: true });
   }
 
-  if (req.method === 'POST' && req.url === '/api/excel') {
+  if (req.method === 'POST' && pathname === '/api/excel') {
     const buffer = await readBody(req);
     if (!buffer.length) return json(res, 400, { error: '请选择 Excel 文件' });
     const workbook = new ExcelJS.Workbook();
@@ -64,10 +78,14 @@ async function handleApi(req, res) {
       }
       return { name: worksheet.name, rows, columns };
     });
-    return json(res, 200, { sheets });
+    if (!sheets.some(sheet => sheet.rows.length)) return json(res, 400, { error: 'Excel 中没有可读取的数据' });
+    let originalName = '评估数据集.xlsx';
+    try { originalName = decodeURIComponent(req.headers['x-file-name'] || originalName); } catch {}
+    const upload = await saveUpload({ buffer, originalName });
+    return json(res, 200, { sheets, upload });
   }
 
-  if (req.method === 'POST' && req.url === '/api/evaluate') {
+  if (req.method === 'POST' && pathname === '/api/evaluate') {
     const body = JSON.parse((await readBody(req)).toString('utf8') || '{}');
     const controller = new AbortController();
     res.on('close', () => {
@@ -75,6 +93,32 @@ async function handleApi(req, res) {
     });
     const result = await callJudge(body, fetch, controller.signal);
     return json(res, 200, result);
+  }
+
+  if (req.method === 'GET' && pathname === '/api/runs') {
+    return json(res, 200, { runs: await listRuns() });
+  }
+
+  if (req.method === 'POST' && pathname === '/api/runs') {
+    const body = JSON.parse((await readBody(req)).toString('utf8') || '{}');
+    return json(res, 201, { run: await saveRun(body) });
+  }
+
+  const runRecord = pathname.match(/^\/api\/runs\/([0-9a-f-]{36})$/i);
+  if (req.method === 'DELETE' && runRecord) {
+    return json(res, 200, { deleted: await deleteRun(runRecord[1]) });
+  }
+
+  const runDownload = pathname.match(/^\/api\/runs\/([0-9a-f-]{36})\/download$/i);
+  if (req.method === 'GET' && runDownload) {
+    const format = url.searchParams.get('format') || 'csv';
+    const artifact = await readRunArtifact(runDownload[1], format);
+    return download(res, { ...artifact, fileName: `evaluation-${runDownload[1]}.${format}` });
+  }
+
+  const uploadDownload = pathname.match(/^\/api\/uploads\/([0-9a-f-]{36})\/download$/i);
+  if (req.method === 'GET' && uploadDownload) {
+    return download(res, await readUploadArtifact(uploadDownload[1]));
   }
 
   return false;

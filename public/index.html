@@ -107,7 +107,7 @@
           <input id="fileInput" type="file" accept=".xlsx" hidden>
           <span class="upload-icon">↥</span>
           <strong>拖拽 Excel 到这里，或点击选择</strong>
-          <small>文件只在当前服务内解析，不会持久化</small>
+          <small>上传后会自动保存到本机服务</small>
         </label>
 
         <div class="dataset-card hidden" id="datasetCard">
@@ -120,6 +120,14 @@
             <div class="field"><label for="sheetSelect">工作表</label><select id="sheetSelect"></select></div>
             <div class="field"><label for="queryColumn">问题列</label><select id="queryColumn"></select></div>
             <div class="field"><label for="answerColumn">回答列</label><select id="answerColumn"></select></div>
+          </div>
+          <div class="variable-mapping-card">
+            <div class="variable-mapping-heading">
+              <div><strong>Prompt 变量映射</strong><span>将 User Prompt 中的变量对应到 Excel 列</span></div>
+              <small>已自动匹配可识别字段</small>
+            </div>
+            <div class="variable-mapping-list" id="promptMappings"></div>
+            <p class="mapping-warning hidden" id="mappingWarning"></p>
           </div>
           <div class="range-card">
             <div class="range-copy">
@@ -175,6 +183,14 @@
             <div><input id="resultSearch" placeholder="搜索问题、回答或模型输出"><button class="secondary-button" id="exportButton" type="button">导出 CSV</button></div>
           </div>
           <div class="table-wrap"><table id="resultTable"></table></div>
+        </div>
+
+        <div class="history-block">
+          <div class="history-heading">
+            <div><h3>已保存记录</h3><span>原始 Excel、JSON 和 CSV 保存在本机 data 目录</span></div>
+            <button class="secondary-button" id="refreshHistory" type="button">刷新</button>
+          </div>
+          <div class="history-list" id="historyList"><p class="history-empty">暂无已保存的评估记录</p></div>
         </div>
       </section>
     </main>
