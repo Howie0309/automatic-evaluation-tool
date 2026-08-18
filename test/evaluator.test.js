@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { callJudge, normalizeEndpoint, parseJudgeOutput, renderTemplate, valueAtPath } from '../lib/evaluator.js';
-import { buildResultsCsv, deleteRun, listRuns, readRunArtifact, readUploadArtifact, sanitizeFilename, saveRun, saveUpload } from '../lib/storage.js';
+import ExcelJS from 'exceljs';
+import { buildResultsCsv, buildResultsXlsx, deleteRun, listRuns, readRunArtifact, readUploadArtifact, sanitizeFilename, saveRun, saveUpload } from '../lib/storage.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from '../public/prompt-mapping.js';
 import { extractDeclaredFields } from '../public/prompt-fields.js';
 import { buildExportSchema } from '../public/result-export.js';
+import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
 
 test('renderTemplate supports nested values and missing values', () => {
@@ -133,11 +135,13 @@ test('storage saves uploaded Excel and result artifacts without API keys', async
   }, root);
   const jsonArtifact = await readRunArtifact(run.id, 'json', root);
   const csvArtifact = await readRunArtifact(run.id, 'csv', root);
+  const xlsxArtifact = await readRunArtifact(run.id, 'xlsx', root);
   assert.equal(jsonArtifact.content.includes('must-not-be-saved'), false);
   assert.match(csvArtifact.content.toString('utf8'), /"结论".*"理由"/);
   assert.match(csvArtifact.content.toString('utf8'), /"通过".*"完整"/);
   assert.match(csvArtifact.content.toString('utf8'), /"人工备注"/);
   assert.match(csvArtifact.content.toString('utf8'), /"原始字段保留"/);
+  assert.equal(xlsxArtifact.contentType, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   assert.equal((await listRuns(root))[0].id, run.id);
 
   const deleted = await deleteRun(run.id, root);
@@ -155,6 +159,76 @@ test('storage sanitizes artifact filenames and builds quoted CSV', () => {
   ], [{ key: '__raw__', label: '模型输出' }], ['query', 'answer'], { queryColumn: 'query', answerColumn: 'answer' });
   assert.match(csv, /"a,b"/);
   assert.match(csv, /"""quoted"""/);
+});
+
+test('CSV keeps every result on one physical line and marks embedded line breaks', () => {
+  const csv = buildResultsCsv([
+    { rowNumber: 1, excelRowNumber: 2, sourceRow: { query: '第一行\n第二行' }, status: 'success', output: { reason: '甲\r\n乙' }, attempts: 1, elapsed: 10 }
+  ], [{ key: 'reason', label: '理由' }], ['query']);
+  assert.equal(csv.split(/\r?\n/).length, 2);
+  assert.match(csv, /第一行 ↵ 第二行/);
+  assert.match(csv, /甲 ↵ 乙/);
+});
+
+test('Excel export keeps one result per row with readable fixed-height rows', async () => {
+  const content = await buildResultsXlsx([
+    { rowNumber: 3, excelRowNumber: 4, sourceRow: { query: '问题\n补充', answer: '回答' }, status: 'success', output: { reason: '理由\n详情' }, attempts: 1, elapsed: 123 }
+  ], [{ key: 'reason', label: '理由' }], ['query', 'answer']);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(content);
+  const sheet = workbook.getWorksheet('评估结果');
+  assert.equal(sheet.rowCount, 2);
+  assert.equal(sheet.getCell('A2').value, 3);
+  assert.equal(sheet.getCell('B2').value, 4);
+  assert.equal(sheet.getCell('C2').value, '问题\n补充');
+  assert.equal(sheet.getCell('F2').value, '理由\n详情');
+  assert.equal(sheet.getRow(2).height, 22);
+  assert.equal(sheet.views[0].state, 'frozen');
+});
+
+test('Excel parser preserves the real row number when blank rows exist', () => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('数据');
+  sheet.addRow(['query', 'answer']);
+  sheet.addRow(['第一条', '回答一']);
+  sheet.addRow([]);
+  sheet.addRow(['第二条', '回答二']);
+  const parsed = parseWorksheet(sheet);
+  assert.deepEqual(parsed.rowNumbers, [2, 4]);
+  assert.deepEqual(parsed.rows.map(row => row.query), ['第一条', '第二条']);
+});
+
+test('legacy run downloads recover source columns and real rows from the saved Excel', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'judge-studio-legacy-export-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const sourceWorkbook = new ExcelJS.Workbook();
+  const sourceSheet = sourceWorkbook.addWorksheet('数据');
+  sourceSheet.addRow(['query', 'answer']);
+  sourceSheet.addRow(['第一条', '回答一']);
+  sourceSheet.addRow([]);
+  sourceSheet.addRow(['第二条', '回答二']);
+  const upload = await saveUpload({ buffer: Buffer.from(await sourceWorkbook.xlsx.writeBuffer()), originalName: '旧数据.xlsx' }, root);
+  const run = await saveRun({
+    uploadId: upload.id,
+    fileName: '旧数据.xlsx',
+    config: { queryColumn: 'query', answerColumn: 'answer' },
+    inputColumns: ['query', 'answer'],
+    outputColumns: [{ key: 'result', label: '结论' }],
+    results: [{ rowNumber: 2, excelRowNumber: 4, sourceRow: { query: '第二条', answer: '回答二' }, query: '第二条', answer: '回答二', status: 'success', output: { result: '通过' } }]
+  }, root);
+  const jsonPath = join(root, 'runs', run.id, 'result.json');
+  const legacy = JSON.parse(await readFile(jsonPath, 'utf8'));
+  delete legacy.inputColumns;
+  delete legacy.results[0].sourceRow;
+  delete legacy.results[0].excelRowNumber;
+  await writeFile(jsonPath, JSON.stringify(legacy));
+
+  const artifact = await readRunArtifact(run.id, 'xlsx', root);
+  const exported = new ExcelJS.Workbook();
+  await exported.xlsx.load(artifact.content);
+  const resultSheet = exported.getWorksheet('评估结果');
+  assert.deepEqual(resultSheet.getRow(1).values.slice(1, 7), ['数据序号', 'Excel行号', 'query', 'answer', '评估状态', '结论']);
+  assert.deepEqual(resultSheet.getRow(2).values.slice(1, 7), [2, 4, '第二条', '回答二', '成功', '通过']);
 });
 
 test('export schema preserves source labels and prefixes conflicting evaluation fields', () => {
