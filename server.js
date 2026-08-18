@@ -4,6 +4,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
 import { callJudge } from './lib/evaluator.js';
+import { parseWorksheet } from './lib/excel.js';
 import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage.js';
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
@@ -64,20 +65,7 @@ async function handleApi(req, res) {
     if (!buffer.length) return json(res, 400, { error: '请选择 Excel 文件' });
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
-    const sheets = workbook.worksheets.map(worksheet => {
-      const headerRow = worksheet.getRow(1);
-      const columns = [];
-      for (let columnIndex = 1; columnIndex <= headerRow.cellCount; columnIndex++) {
-        columns.push(headerRow.getCell(columnIndex).text.trim() || `列${columnIndex}`);
-      }
-      const rows = [];
-      for (let rowIndex = 2; rowIndex <= worksheet.rowCount; rowIndex++) {
-        const excelRow = worksheet.getRow(rowIndex);
-        const row = Object.fromEntries(columns.map((column, index) => [column, excelRow.getCell(index + 1).text]));
-        if (Object.values(row).some(value => value !== '')) rows.push(row);
-      }
-      return { name: worksheet.name, rows, columns };
-    });
+    const sheets = workbook.worksheets.map(parseWorksheet);
     if (!sheets.some(sheet => sheet.rows.length)) return json(res, 400, { error: 'Excel 中没有可读取的数据' });
     let originalName = '评估数据集.xlsx';
     try { originalName = decodeURIComponent(req.headers['x-file-name'] || originalName); } catch {}

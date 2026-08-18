@@ -1,11 +1,11 @@
 import { extractDeclaredFields } from './prompt-fields.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from './prompt-mapping.js';
-import { buildExportSchema } from './result-export.js';
+import { buildExportRows, outputCellValue } from './result-export.js';
 import { isRetryableError, retryDelay } from './retry.js';
 
 const $ = selector => document.querySelector(selector);
 const state = {
-  workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null,
+  workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null,
   promptMappings: {},
   running: false, paused: false, stopRequested: false,
   activeControllers: new Set(), pauseWaiters: new Set(), stopWaiters: new Set()
@@ -264,7 +264,7 @@ function applyRangePreset(preset) {
 }
 
 function removeFile() {
-  Object.assign(state, { workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, promptMappings: {} });
+  Object.assign(state, { workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null, promptMappings: {} });
   $('#fileInput').value = '';
   $('#datasetCard').classList.add('hidden');
   $('#dropzone').classList.remove('hidden');
@@ -327,14 +327,6 @@ function resultOutputColumns(results = state.results.filter(Boolean)) {
   return columns;
 }
 
-function outputCellValue(output, key, fallback = '') {
-  if (key === '__raw__') return typeof output === 'string' ? output : output == null ? fallback : JSON.stringify(output);
-  if (output == null || typeof output !== 'object') return '';
-  const value = Object.prototype.hasOwnProperty.call(output, key) ? output[key] : valueAtPath(output, key);
-  if (value == null) return '';
-  return typeof value === 'object' ? JSON.stringify(value) : String(value);
-}
-
 function fillTemplate(template, data) {
   return template.replace(/{{\s*([^{}]+?)\s*}}/g, (_, path) => {
     const value = path.split('.').reduce((current, key) => current?.[key], data);
@@ -342,14 +334,14 @@ function fillTemplate(template, data) {
   });
 }
 
-async function evaluateOne(row, position, sourceIndex, config) {
+async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
   const start = performance.now();
   const normalized = buildPromptData(row, config);
   const maxRetries = Math.max(0, Number(config.retryCount) || 0);
   let attempts = 0;
   while (attempts <= maxRetries) {
     if (state.stopRequested) {
-      return { position, rowNumber: sourceIndex + 1, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'cancelled', score: null, displayOutput: '用户已中断评估', output: null, attempts, elapsed: performance.now() - start };
+      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'cancelled', score: null, displayOutput: '用户已中断评估', output: null, attempts, elapsed: performance.now() - start };
     }
     attempts++;
     const controller = new AbortController();
@@ -367,16 +359,16 @@ async function evaluateOne(row, position, sourceIndex, config) {
         throw error;
       }
       const score = numericScore(payload.output, config.scorePath);
-      return { position, rowNumber: sourceIndex + 1, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, attempts, elapsed: performance.now() - start };
+      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, attempts, elapsed: performance.now() - start };
     } catch (error) {
       if (controller.signal.aborted && state.stopRequested) {
-        return { position, rowNumber: sourceIndex + 1, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'cancelled', score: null, displayOutput: '用户已中断评估', output: null, attempts, elapsed: performance.now() - start };
+        return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'cancelled', score: null, displayOutput: '用户已中断评估', output: null, attempts, elapsed: performance.now() - start };
       }
       if (attempts <= maxRetries && isRetryableError(error.status, error.message)) {
         await waitForRetryOrStop(retryDelay(attempts));
         continue;
       }
-      return { position, rowNumber: sourceIndex + 1, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'error', score: null, displayOutput: error.message, output: null, attempts, elapsed: performance.now() - start };
+      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'error', score: null, displayOutput: error.message, output: null, attempts, elapsed: performance.now() - start };
     } finally {
       state.activeControllers.delete(controller);
     }
@@ -478,6 +470,7 @@ async function runEvaluation() {
   state.pauseWaiters.clear();
   state.stopWaiters.clear();
   state.results = Array(targetRows.length);
+  state.lastRunId = null;
   $('#runButton').disabled = true;
   $('#runButton').innerHTML = '<span>■</span> 评估中';
   $('#pauseButton').disabled = false;
@@ -495,7 +488,8 @@ async function runEvaluation() {
       if (state.stopRequested) break;
       const position = cursor++;
       const sourceIndex = range.start - 1 + position;
-      state.results[position] = await evaluateOne(targetRows[position], position, sourceIndex, config);
+      const excelRowNumber = state.sheet.rowNumbers?.[sourceIndex] ?? sourceIndex + 2;
+      state.results[position] = await evaluateOne(targetRows[position], position, sourceIndex, excelRowNumber, config);
       finished++;
       renderProgress(finished, targetRows.length);
       renderResults();
@@ -507,6 +501,7 @@ async function runEvaluation() {
   $('#stopButton').disabled = true;
   $('#progressText').textContent = '正在保存结果…';
   const saveOutcome = await persistCurrentRun(config, range, wasStopped);
+  if (saveOutcome?.run?.id) state.lastRunId = saveOutcome.run.id;
   state.running = false;
   state.paused = false;
   state.stopRequested = false;
@@ -567,25 +562,25 @@ function exportCsv() {
   const rows = state.results.filter(Boolean);
   if (!rows.length) return toast('暂无可导出的结果', true);
   const quote = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
-  const outputColumns = resultOutputColumns(rows);
-  const schema = buildExportSchema(state.columns, outputColumns);
-  const queryColumn = $('#queryColumn').value;
-  const answerColumn = $('#answerColumn').value;
-  const sourceValue = (item, column) => {
-    if (item.sourceRow && Object.prototype.hasOwnProperty.call(item.sourceRow, column)) return item.sourceRow[column];
-    if (column === queryColumn) return item.query;
-    if (column === answerColumn) return item.answer;
-    return '';
-  };
-  const csv = '\ufeff' + [
-    [schema.labels.rowNumber, ...schema.inputColumns, schema.labels.status, ...schema.outputs.map(column => column.exportLabel), schema.labels.attempts, schema.labels.elapsed],
-    ...rows.map(item => [item.rowNumber, ...schema.inputColumns.map(column => sourceValue(item, column)), item.status, ...schema.outputs.map(column => outputCellValue(item.output, column.key, item.displayOutput)), item.attempts ?? 0, Math.round(item.elapsed)])
-  ].map(row => row.map(quote).join(',')).join('\n');
+  const { rows: exportRows } = buildExportRows(rows, resultOutputColumns(rows), state.columns, {
+    queryColumn: $('#queryColumn').value,
+    answerColumn: $('#answerColumn').value
+  }, { singleLine: true });
+  const csv = '\ufeff' + exportRows.map(row => row.map(quote).join(',')).join('\r\n');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   link.download = `${state.fileName.replace(/\.xlsx?$/i, '') || 'evaluation'}-评估结果.csv`;
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+function exportResults() {
+  if (!state.results.filter(Boolean).length) return toast('暂无可导出的结果', true);
+  if (!state.lastRunId) return exportCsv();
+  const link = document.createElement('a');
+  link.href = `/api/runs/${encodeURIComponent(state.lastRunId)}/download?format=xlsx`;
+  link.download = `${state.fileName.replace(/\.xlsx?$/i, '') || 'evaluation'}-评估结果.xlsx`;
+  link.click();
 }
 
 function formatHistoryTime(value) {
@@ -612,7 +607,7 @@ async function loadRunHistory() {
       const sourceLink = run.uploadId
         ? `<a href="/api/uploads/${encodeURIComponent(run.uploadId)}/download">原始 Excel</a>`
         : '';
-      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}</p><div class="history-links">${sourceLink}<a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
+      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}</p><div class="history-links">${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
     }).join('');
   } catch (error) {
     list.innerHTML = `<p class="history-empty">历史记录读取失败：${escapeHtml(error.message)}</p>`;
@@ -671,7 +666,7 @@ $('#stopButton').addEventListener('click', stopEvaluation);
 $('#resultSearch').addEventListener('input', renderResults);
 $('#resultTable').addEventListener('click', event => { if (event.target.matches('[data-index]')) showDetail(Number(event.target.dataset.index)); });
 $('#closeDialog').addEventListener('click', () => $('#detailDialog').close());
-$('#exportButton').addEventListener('click', exportCsv);
+$('#exportButton').addEventListener('click', exportResults);
 $('#refreshHistory').addEventListener('click', loadRunHistory);
 $('#historyList').addEventListener('click', event => {
   const button = event.target.closest('[data-delete-run]');
