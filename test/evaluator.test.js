@@ -9,6 +9,7 @@ import { buildResultsCsv, buildResultsXlsx, deleteRun, listRuns, readRunArtifact
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from '../public/prompt-mapping.js';
 import { extractDeclaredFields } from '../public/prompt-fields.js';
 import { buildExportSchema } from '../public/result-export.js';
+import { formatDetailAll, formatDetailInput, formatDetailOutput } from '../public/detail-format.js';
 import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
 
@@ -25,6 +26,16 @@ test('parseJudgeOutput accepts plain and fenced JSON', () => {
 
 test('valueAtPath supports nested score', () => {
   assert.equal(valueAtPath({ result: { score: 6 } }, 'result.score'), 6);
+});
+
+test('detail formatter preserves complete model input and output for copying', () => {
+  const input = formatDetailInput({ systemPrompt: '系统规则\n第二行', userPrompt: '问题：测试\n回答：完整内容' });
+  const output = formatDetailOutput({ result: 'PASS', reason: '完整理由' });
+  assert.match(input, /【System Prompt】\n系统规则\n第二行/);
+  assert.match(input, /【User Prompt】\n问题：测试\n回答：完整内容/);
+  assert.equal(output, '{\n  "result": "PASS",\n  "reason": "完整理由"\n}');
+  assert.match(formatDetailAll(input, output), /【模型输出】[\s\S]*完整理由/);
+  assert.equal(formatDetailOutput('**Markdown**\n完整输出'), '**Markdown**\n完整输出');
 });
 
 test('extractDeclaredFields returns top-level System Prompt variables', () => {
