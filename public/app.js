@@ -1,12 +1,14 @@
 import { extractDeclaredFields } from './prompt-fields.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from './prompt-mapping.js';
 import { buildExportRows, outputCellValue } from './result-export.js';
+import { formatDetailAll, formatDetailInput, formatDetailOutput } from './detail-format.js';
 import { isRetryableError, retryDelay } from './retry.js';
 
 const $ = selector => document.querySelector(selector);
 const state = {
   workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null,
   promptMappings: {},
+  lastRunConfig: null, detailCopy: { input: '', output: '', all: '' },
   running: false, paused: false, stopRequested: false,
   activeControllers: new Set(), pauseWaiters: new Set(), stopWaiters: new Set()
 };
@@ -264,7 +266,7 @@ function applyRangePreset(preset) {
 }
 
 function removeFile() {
-  Object.assign(state, { workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null, promptMappings: {} });
+  Object.assign(state, { workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null, lastRunConfig: null, promptMappings: {} });
   $('#fileInput').value = '';
   $('#datasetCard').classList.add('hidden');
   $('#dropzone').classList.remove('hidden');
@@ -306,7 +308,7 @@ function outputText(output) {
 }
 
 function resultOutputColumns(results = state.results.filter(Boolean)) {
-  const declared = extractDeclaredFields($('#systemPrompt').value);
+  const declared = extractDeclaredFields(state.lastRunConfig?.systemPrompt || $('#systemPrompt').value);
   const actual = [];
   let needsRawColumn = false;
   for (const item of results) {
@@ -471,6 +473,7 @@ async function runEvaluation() {
   state.stopWaiters.clear();
   state.results = Array(targetRows.length);
   state.lastRunId = null;
+  state.lastRunConfig = { ...config, apiKey: '' };
   $('#runButton').disabled = true;
   $('#runButton').innerHTML = '<span>■</span> 评估中';
   $('#pauseButton').disabled = false;
@@ -554,8 +557,70 @@ function renderResults() {
 function showDetail(index) {
   const item = state.results[index];
   if (!item) return;
-  $('#detailContent').innerHTML = `<div class="detail-block"><span>问题</span><p>${escapeHtml(item.query)}</p></div><div class="detail-block"><span>待评估回答</span><p>${escapeHtml(item.answer)}</p></div><div class="detail-block"><span>请求次数</span><p>${item.attempts ?? 0}${item.attempts > 1 ? ` 次（自动重试 ${item.attempts - 1} 次）` : ' 次'}</p></div><div class="detail-block"><span>提取分数</span><p>${item.score ?? '未提取'}</p></div><div class="detail-block"><span>模型原始输出</span><pre>${escapeHtml(typeof item.output === 'string' ? item.output : JSON.stringify(item.output, null, 2) || item.displayOutput)}</pre></div>`;
+  const config = state.lastRunConfig || settings();
+  const fallbackRow = {
+    [config.queryColumn || 'query']: item.query,
+    [config.answerColumn || 'answer']: item.answer
+  };
+  const sourceRow = item.sourceRow && Object.keys(item.sourceRow).length ? item.sourceRow : fallbackRow;
+  const promptData = buildPromptData(sourceRow, config);
+  const renderedUserPrompt = fillTemplate(config.userTemplate || '', promptData);
+  const input = formatDetailInput({ systemPrompt: config.systemPrompt, userPrompt: renderedUserPrompt });
+  const output = formatDetailOutput(item.output, item.displayOutput);
+  state.detailCopy = { input, output, all: formatDetailAll(input, output) };
+  const status = item.status === 'success' ? '完成' : item.status === 'cancelled' ? '已中断' : '接口错误';
+  const sourceFields = JSON.stringify(sourceRow, null, 2);
+  $('#detailContent').innerHTML = `
+    <div class="detail-meta">
+      <span><b>数据序号</b>${item.rowNumber ?? '—'}</span>
+      <span><b>Excel 行号</b>${item.excelRowNumber ?? '—'}</span>
+      <span><b>状态</b>${status}</span>
+      <span><b>请求次数</b>${item.attempts ?? 0}</span>
+      <span><b>耗时</b>${(Number(item.elapsed || 0) / 1000).toFixed(1)}s</span>
+    </div>
+    <div class="detail-actions"><button class="copy-button copy-all" type="button" data-copy-detail="all">复制本条输入与输出</button></div>
+    <section class="detail-block detail-full-block">
+      <div class="detail-block-heading"><span>完整模型输入</span><button class="copy-button" type="button" data-copy-detail="input">复制输入</button></div>
+      <pre>${escapeHtml(input)}</pre>
+    </section>
+    <section class="detail-block detail-full-block">
+      <div class="detail-block-heading"><span>完整模型输出</span><button class="copy-button" type="button" data-copy-detail="output">复制输出</button></div>
+      <pre>${escapeHtml(output)}</pre>
+    </section>
+    <details class="detail-source">
+      <summary>查看原始 Excel 数据字段（${Object.keys(sourceRow).length} 个）</summary>
+      <pre>${escapeHtml(sourceFields)}</pre>
+    </details>`;
   $('#detailDialog').showModal();
+}
+
+async function copyText(text) {
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    if (!copied) throw new Error('复制失败，请手动选择文本复制');
+  }
+}
+
+async function copyDetail(kind) {
+  const text = state.detailCopy[kind];
+  if (!text) return toast('暂无可复制的内容', true);
+  try {
+    await copyText(text);
+    toast(kind === 'input' ? '本条完整输入已复制' : kind === 'output' ? '本条完整输出已复制' : '本条输入与输出已复制');
+  } catch (error) {
+    toast(error.message, true);
+  }
 }
 
 function exportCsv() {
@@ -607,10 +672,41 @@ async function loadRunHistory() {
       const sourceLink = run.uploadId
         ? `<a href="/api/uploads/${encodeURIComponent(run.uploadId)}/download">原始 Excel</a>`
         : '';
-      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}</p><div class="history-links">${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
+      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}</p><div class="history-links"><button class="history-view" type="button" data-view-run="${id}">查看结果</button>${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
     }).join('');
   } catch (error) {
     list.innerHTML = `<p class="history-empty">历史记录读取失败：${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function viewRunRecord(button) {
+  const id = button.dataset.viewRun;
+  button.disabled = true;
+  button.textContent = '读取中…';
+  try {
+    const response = await fetch(`/api/runs/${encodeURIComponent(id)}/download?format=json`);
+    const record = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(record.error || '读取评估记录失败');
+    state.results = (record.results || []).map((item, index) => ({ ...item, position: index }));
+    state.columns = Array.isArray(record.inputColumns) && record.inputColumns.length
+      ? record.inputColumns
+      : Object.keys(state.results[0]?.sourceRow || {});
+    state.fileName = record.fileName || '历史评估';
+    state.lastRunId = id;
+    state.lastRunConfig = { ...(record.config || {}), apiKey: '' };
+    $('#emptyResults').classList.add('hidden');
+    $('#results').classList.remove('hidden');
+    $('#progressText').textContent = '已加载历史评估结果';
+    $('#progressMeta').textContent = `${state.results.length} / ${state.results.length}`;
+    $('#progressBar').style.width = '100%';
+    renderResults();
+    $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast(`已载入 ${state.results.length} 条历史评估结果`);
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = '查看结果';
   }
 }
 
@@ -666,9 +762,15 @@ $('#stopButton').addEventListener('click', stopEvaluation);
 $('#resultSearch').addEventListener('input', renderResults);
 $('#resultTable').addEventListener('click', event => { if (event.target.matches('[data-index]')) showDetail(Number(event.target.dataset.index)); });
 $('#closeDialog').addEventListener('click', () => $('#detailDialog').close());
+$('#detailContent').addEventListener('click', event => {
+  const button = event.target.closest('[data-copy-detail]');
+  if (button) copyDetail(button.dataset.copyDetail);
+});
 $('#exportButton').addEventListener('click', exportResults);
 $('#refreshHistory').addEventListener('click', loadRunHistory);
 $('#historyList').addEventListener('click', event => {
+  const viewButton = event.target.closest('[data-view-run]');
+  if (viewButton) return viewRunRecord(viewButton);
   const button = event.target.closest('[data-delete-run]');
   if (button) deleteRunRecord(button);
 });

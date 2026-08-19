@@ -189,8 +189,11 @@ td { max-width: 340px; padding: 12px; border-top: 1px solid var(--line); vertica
 .history-main span, .history-meta { margin-top: 5px; color: var(--muted); font-size: 9px; }
 .history-meta { margin: 0; white-space: nowrap; }
 .history-links { display: flex; align-items: center; gap: 7px; }
-.history-links a, .history-delete { padding: 6px 9px; color: var(--green); background: #fff; border: 1px solid #cad6ce; border-radius: 7px; text-decoration: none; font-size: 9px; font-weight: 700; }
+.history-links a, .history-delete, .history-view { padding: 6px 9px; color: var(--green); background: #fff; border: 1px solid #cad6ce; border-radius: 7px; text-decoration: none; font-size: 9px; font-weight: 700; }
 .history-links a:hover { color: #fff; background: var(--green); }
+.history-view { color: #fff; background: var(--green); border-color: var(--green); }
+.history-view:hover:not(:disabled) { background: var(--green-dark); }
+.history-view:disabled { cursor: wait; opacity: .55; }
 .history-delete { color: #a12e2e; border-color: #eccaca; }
 .history-delete:hover:not(:disabled) { color: #fff; background: #a83a3a; border-color: #a83a3a; }
 .history-delete:disabled { cursor: wait; opacity: .55; }
@@ -203,13 +206,27 @@ footer span { margin: 0 6px; color: var(--green); }
 .help-popover h3 { margin: 0 0 8px; font: 600 17px Georgia, "Songti SC", serif; }
 .help-popover p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
 .help-popover button { position: absolute; top: 9px; right: 9px; width: 27px; height: 27px; color: var(--muted); background: var(--paper); border: 0; border-radius: 50%; }
-dialog { width: min(650px, calc(100% - 32px)); padding: 30px; border: 0; border-radius: 16px; box-shadow: 0 30px 90px rgba(0,0,0,.28); }
+dialog { width: min(960px, calc(100% - 32px)); max-height: calc(100vh - 32px); padding: 30px; overflow: auto; border: 0; border-radius: 16px; box-shadow: 0 30px 90px rgba(0,0,0,.28); }
 dialog::backdrop { background: rgba(17,29,23,.5); backdrop-filter: blur(3px); }
 dialog h2 { margin: 10px 0 24px; font: 600 27px Georgia, "Songti SC", serif; }
 .dialog-close { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; background: var(--paper); border: 0; border-radius: 50%; font-size: 20px; }
+.detail-meta { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.detail-meta span { padding: 10px 12px; color: var(--ink); background: var(--paper); border-radius: 8px; font-size: 11px; }
+.detail-meta b { display: block; margin-bottom: 4px; color: var(--muted); font-size: 8px; letter-spacing: .08em; }
+.detail-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
 .detail-block { margin-top: 17px; }
 .detail-block span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .1em; }
 .detail-block pre, .detail-block p { margin: 0; padding: 12px; white-space: pre-wrap; word-break: break-word; background: var(--paper); border-radius: 8px; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.detail-full-block pre { min-height: 110px; padding: 16px; color: #223029; background: #f5f7f4; border: 1px solid var(--line); user-select: text; }
+.detail-block-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 7px; }
+.detail-block-heading span { margin: 0; }
+.copy-button { padding: 7px 10px; color: var(--green); background: #fff; border: 1px solid #bdd0c4; border-radius: 7px; font-size: 10px; font-weight: 700; }
+.copy-button:hover { color: #fff; background: var(--green); border-color: var(--green); }
+.copy-all { padding: 9px 13px; color: #fff; background: var(--green); border-color: var(--green); }
+.copy-all:hover { background: var(--green-dark); }
+.detail-source { margin-top: 18px; padding: 12px 14px; background: #f7f9f6; border: 1px solid var(--line); border-radius: 9px; }
+.detail-source summary { color: var(--green); font-size: 11px; font-weight: 700; cursor: pointer; }
+.detail-source pre { margin: 12px 0 0; padding: 12px; overflow: visible; white-space: pre-wrap; word-break: break-word; background: #fff; border-radius: 7px; font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; user-select: text; }
 
 @media (max-width: 780px) {
   .shell { width: min(100% - 24px, 1180px); }
@@ -236,4 +253,6 @@ dialog h2 { margin: 10px 0 24px; font: 600 27px Georgia, "Songti SC", serif; }
   .history-meta { white-space: normal; }
   .history-links { flex-wrap: wrap; }
   .step span { display: none; }
+  dialog { width: calc(100% - 18px); max-height: calc(100vh - 18px); padding: 24px 16px; }
+  .detail-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
