@@ -15,7 +15,7 @@
         <span><strong>Judge Studio</strong><small>AI Evaluation Workspace</small></span>
       </a>
       <div class="top-actions">
-        <span class="service"><i></i> 服务已连接</span>
+        <span class="service" id="serviceStatus"><i></i><span>正在检查服务…</span></span>
         <button class="ghost-button" id="resetButton" type="button">重置工作台</button>
       </div>
     </header>
@@ -89,6 +89,15 @@
             <div class="label-with-help"><label for="reasoningEffort">思考强度</label><button class="help-dot" type="button" data-help="reasoning" aria-label="思考强度说明">?</button></div>
             <select id="reasoningEffort"></select>
             <small class="field-help" id="reasoningHelp">跟随所选模型的默认设置。</small>
+          </div>
+          <div class="field span-2" id="webSearchField">
+            <div class="label-with-help"><label for="webSearchMode">联网搜索</label><button class="help-dot" type="button" data-help="webSearch" aria-label="联网搜索说明">?</button></div>
+            <select id="webSearchMode">
+              <option value="off">关闭 · 不访问网络</option>
+              <option value="auto">自动 · 由模型判断是否搜索</option>
+              <option value="required">强制 · 每条都必须调用搜索</option>
+            </select>
+            <small class="field-help" id="webSearchHelp">仅 OpenAI Responses API 可用；默认关闭，以保持评估稳定和可复现。</small>
           </div>
           <div class="field span-2">
             <div class="label-row"><label for="scorePath">分数字段路径（可选）</label><span>仅用于统计，不限制模型输出</span></div>
@@ -180,7 +189,7 @@
           </div>
           <div class="result-toolbar">
             <div><h3>评估结果</h3><span id="resultCount">0 条结果</span></div>
-            <div><input id="resultSearch" placeholder="搜索问题、回答或模型输出"><button class="secondary-button" id="exportButton" type="button">导出 Excel</button></div>
+            <div><input id="resultSearch" placeholder="搜索问题、回答或模型输出"><button class="secondary-button" id="exportCsvButton" type="button">导出 CSV</button><button class="secondary-button" id="exportButton" type="button">导出 Excel</button></div>
           </div>
           <div class="table-wrap"><table id="resultTable"></table></div>
         </div>

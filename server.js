@@ -10,6 +10,8 @@ import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, save
 const root = fileURLToPath(new URL('./public/', import.meta.url));
 const port = Number(process.env.PORT || 3077);
 const maxBody = 20 * 1024 * 1024;
+const apiVersion = 2;
+const startedAt = new Date().toISOString();
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -57,7 +59,13 @@ async function handleApi(req, res) {
   const pathname = url.pathname;
 
   if (req.method === 'GET' && pathname === '/api/health') {
-    return json(res, 200, { ok: true });
+    return json(res, 200, {
+      ok: true,
+      apiVersion,
+      startedAt,
+      pid: process.pid,
+      capabilities: { webSearch: true }
+    });
   }
 
   if (req.method === 'POST' && pathname === '/api/excel') {
