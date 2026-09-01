@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { callJudge, normalizeEndpoint, parseJudgeOutput, renderTemplate, valueAtPath } from '../lib/evaluator.js';
+import { callJudge, extractWebSearchMetadata, normalizeEndpoint, parseJudgeOutput, renderTemplate, valueAtPath } from '../lib/evaluator.js';
 import ExcelJS from 'exceljs';
 import { buildResultsCsv, buildResultsXlsx, deleteRun, listRuns, readRunArtifact, readUploadArtifact, sanitizeFilename, saveRun, saveUpload } from '../lib/storage.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from '../public/prompt-mapping.js';
 import { extractDeclaredFields } from '../public/prompt-fields.js';
-import { buildExportSchema } from '../public/result-export.js';
+import { buildExportRows, buildExportSchema } from '../public/result-export.js';
 import { formatDetailAll, formatDetailInput, formatDetailOutput } from '../public/detail-format.js';
 import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
@@ -102,6 +102,69 @@ test('callJudge uses Responses API and reasoning effort for OpenAI', async () =>
   assert.equal(result.output.score, 9);
 });
 
+test('callJudge enables required OpenAI web search and extracts deduplicated citations', async () => {
+  let captured;
+  const payload = {
+    output: [
+      {
+        type: 'web_search_call',
+        status: 'completed',
+        action: {
+          type: 'search',
+          query: '今日金价',
+          sources: [{ type: 'url', title: '来源 A', url: 'https://example.com/a' }]
+        }
+      },
+      {
+        type: 'message',
+        content: [{
+          type: 'output_text',
+          text: '{"verdict":"准确"}',
+          annotations: [
+            { type: 'url_citation', title: '来源 A', url: 'https://example.com/a' },
+            { type: 'url_citation', title: '来源 B', url: 'https://example.com/b' }
+          ]
+        }]
+      }
+    ]
+  };
+  const fakeFetch = async (url, options) => {
+    captured = { url, body: JSON.parse(options.body) };
+    return new Response(JSON.stringify(payload), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  const result = await callJudge({
+    apiKey: 'test-key', endpoint: 'https://api.openai.com/v1', provider: 'openai', model: 'gpt-5.6',
+    systemPrompt: 'system', userPrompt: 'user', webSearchMode: 'required'
+  }, fakeFetch);
+  assert.deepEqual(captured.body.tools, [{ type: 'web_search' }]);
+  assert.equal(captured.body.tool_choice, 'required');
+  assert.deepEqual(captured.body.include, ['web_search_call.action.sources']);
+  assert.deepEqual(result.webSearch.queries, ['今日金价']);
+  assert.deepEqual(result.webSearch.sources, [
+    { title: '来源 A', url: 'https://example.com/a' },
+    { title: '来源 B', url: 'https://example.com/b' }
+  ]);
+  assert.deepEqual(extractWebSearchMetadata(payload), result.webSearch);
+});
+
+test('callJudge rejects required search when the API returns no web_search_call', async () => {
+  const fakeFetch = async () => new Response(JSON.stringify({
+    output: [{
+      type: 'message',
+      content: [{ type: 'output_text', text: '{"verdict":"准确","evidence":[{"url":"https://invalid.example"}]}' }]
+    }]
+  }), { status: 200, headers: { 'content-type': 'application/json' } });
+
+  await assert.rejects(() => callJudge({
+    apiKey: 'test-key', endpoint: 'https://api.openai.com/v1', provider: 'openai', model: 'gpt-5.6',
+    systemPrompt: 'system', userPrompt: 'user', webSearchMode: 'required'
+  }, fakeFetch), error => {
+    assert.equal(error.status, 422);
+    assert.match(error.message, /没有返回 web_search_call/);
+    return true;
+  });
+});
+
 test('callJudge sends OpenAI-compatible payload and parses the result', async () => {
   let captured;
   const fakeFetch = async (url, options) => {
@@ -172,16 +235,16 @@ test('storage sanitizes artifact filenames and builds quoted CSV', () => {
   assert.match(csv, /"""quoted"""/);
 });
 
-test('CSV keeps every result on one physical line and marks embedded line breaks', () => {
+test('CSV preserves embedded line breaks without inserting display markers', () => {
   const csv = buildResultsCsv([
     { rowNumber: 1, excelRowNumber: 2, sourceRow: { query: '第一行\n第二行' }, status: 'success', output: { reason: '甲\r\n乙' }, attempts: 1, elapsed: 10 }
   ], [{ key: 'reason', label: '理由' }], ['query']);
-  assert.equal(csv.split(/\r?\n/).length, 2);
-  assert.match(csv, /第一行 ↵ 第二行/);
-  assert.match(csv, /甲 ↵ 乙/);
+  assert.match(csv, /"第一行\n第二行"/);
+  assert.match(csv, /"甲\r\n乙"/);
+  assert.doesNotMatch(csv, /↵/);
 });
 
-test('Excel export keeps one result per row with readable fixed-height rows', async () => {
+test('Excel export preserves Markdown line breaks and enables wrapped display', async () => {
   const content = await buildResultsXlsx([
     { rowNumber: 3, excelRowNumber: 4, sourceRow: { query: '问题\n补充', answer: '回答' }, status: 'success', output: { reason: '理由\n详情' }, attempts: 1, elapsed: 123 }
   ], [{ key: 'reason', label: '理由' }], ['query', 'answer']);
@@ -193,7 +256,9 @@ test('Excel export keeps one result per row with readable fixed-height rows', as
   assert.equal(sheet.getCell('B2').value, 4);
   assert.equal(sheet.getCell('C2').value, '问题\n补充');
   assert.equal(sheet.getCell('F2').value, '理由\n详情');
-  assert.equal(sheet.getRow(2).height, 22);
+  assert.equal(sheet.getCell('C2').alignment.wrapText, true);
+  assert.equal(sheet.getCell('F2').alignment.wrapText, true);
+  assert.equal(sheet.getRow(2).height, undefined);
   assert.equal(sheet.views[0].state, 'frozen');
 });
 
@@ -251,6 +316,27 @@ test('export schema preserves source labels and prefixes conflicting evaluation 
   assert.deepEqual(schema.inputColumns, ['query', 'score', '评估状态']);
   assert.equal(schema.labels.status, '评估_评估状态');
   assert.deepEqual(schema.outputs.map(column => column.exportLabel), ['评估_score', 'reason', '评估_评估状态_2']);
+});
+
+test('exports web search status, queries and sources when search is enabled', () => {
+  const { rows } = buildExportRows([{
+    rowNumber: 1,
+    excelRowNumber: 2,
+    sourceRow: { query: '问题' },
+    status: 'success',
+    output: { verdict: '正确' },
+    webSearch: {
+      used: true,
+      queries: ['查询词'],
+      sources: [{ title: '官方来源', url: 'https://example.com/source' }]
+    },
+    attempts: 1,
+    elapsed: 50
+  }], [{ key: 'verdict', label: '结论' }], ['query'], { webSearchMode: 'auto' });
+  assert.deepEqual(rows[0].slice(5, 8), ['搜索状态', '搜索词', '搜索来源']);
+  assert.equal(rows[1][5], '已搜索');
+  assert.equal(rows[1][6], '查询词');
+  assert.equal(rows[1][7], '官方来源 (https://example.com/source)');
 });
 
 test('deleting one run keeps an upload referenced by another run', async t => {

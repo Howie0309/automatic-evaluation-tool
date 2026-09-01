@@ -9,6 +9,7 @@ const state = {
   workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null,
   promptMappings: {},
   lastRunConfig: null, detailCopy: { input: '', output: '', all: '' },
+  backendWebSearch: null,
   running: false, paused: false, stopRequested: false,
   activeControllers: new Set(), pauseWaiters: new Set(), stopWaiters: new Set()
 };
@@ -20,11 +21,12 @@ const providers = {
   custom: { endpoint: '', models: [] }
 };
 
-const persistedIds = ['systemPrompt', 'userPrompt', 'provider', 'model', 'endpoint', 'temperature', 'reasoningEffort', 'scorePath', 'concurrency', 'retryCount'];
+const persistedIds = ['systemPrompt', 'userPrompt', 'provider', 'model', 'endpoint', 'temperature', 'reasoningEffort', 'webSearchMode', 'scorePath', 'concurrency', 'retryCount'];
 
 const help = {
   temperature: { title: '温度是什么？', text: '温度控制输出的随机程度。0 更稳定、更聚焦；数值升高会让措辞和判断更发散。自动评估重视可重复性，建议使用 0。OpenAI 推理模型主要由思考强度控制，本工具不会向它们发送温度参数。' },
-  reasoning: { title: '思考强度是什么？', text: '它控制模型在回答前投入多少推理。强度越高，通常质量上限更高，但延迟和推理 token 也会增加。不同模型支持的档位不同；不确定时选“自动”，自动评估建议先比较 low 与 medium。' }
+  reasoning: { title: '思考强度是什么？', text: '它控制模型在回答前投入多少推理。强度越高，通常质量上限更高，但延迟和推理 token 也会增加。不同模型支持的档位不同；不确定时选“自动”，自动评估建议先比较 low 与 medium。' },
+  webSearch: { title: '联网搜索怎么选？', text: '关闭时模型不联网；自动时由模型根据问题决定是否搜索；强制时每条评估都必须调用搜索。联网会增加耗时和费用，且网页变化可能影响结果可复现性。' }
 };
 
 function toast(message, isError = false) {
@@ -37,6 +39,46 @@ function toast(message, isError = false) {
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
+}
+
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value ?? ''));
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function webSearchModeLabel(mode) {
+  return ({ off: '已关闭', auto: '自动', required: '强制' })[mode] || '已关闭';
+}
+
+function webSearchResultLabel(item) {
+  if (item.webSearch?.used) return `已搜索 · ${item.webSearch.sources?.length || 0} 个来源`;
+  if (item.status !== 'success') return '—';
+  return '未调用';
+}
+
+function renderWebSearchDetail(item, config) {
+  const mode = config.webSearchMode || 'off';
+  const metadata = item.webSearch || { used: false, queries: [], sources: [] };
+  if (mode === 'off' && !metadata.used) return '';
+  const queries = (metadata.queries || []).map(query => `<code>${escapeHtml(query)}</code>`).join('');
+  const sources = (metadata.sources || []).map(source => {
+    const url = safeHttpUrl(source.url);
+    if (!url) return '';
+    const title = source.title || source.url;
+    return `<li><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><small>${escapeHtml(source.url)}</small></li>`;
+  }).join('');
+  const emptyCopy = metadata.used
+    ? '模型调用了搜索，但接口未返回可核验来源；模型输出中的 evidence 链接仍不视为已验证。'
+    : '本条评估未实际调用搜索；模型输出中的 evidence、source 或 URL 均未经搜索工具验证，请勿直接作为引用依据。';
+  return `<section class="detail-block detail-search-block">
+    <div class="detail-block-heading"><span>联网搜索与引用</span><i>${escapeHtml(webSearchModeLabel(mode))}</i></div>
+    ${queries ? `<div class="search-queries"><b>搜索词</b>${queries}</div>` : ''}
+    ${sources ? `<ol class="search-sources">${sources}</ol>` : `<p class="search-empty">${emptyCopy}</p>`}
+  </section>`;
 }
 
 function updateOutputVariables() {
@@ -172,6 +214,36 @@ function updateModelControls() {
   $('#reasoningHelp').textContent = ['deepseek', 'siliconflow'].includes(provider)
     ? '该服务商使用开启/关闭思考，不提供统一强度档位。'
     : '档位支持情况取决于具体模型；不确定时选择“自动”。';
+  const providerSupportsWebSearch = provider === 'openai';
+  const supportsWebSearch = providerSupportsWebSearch && state.backendWebSearch !== false;
+  $('#webSearchMode').disabled = !supportsWebSearch;
+  $('#webSearchHelp').textContent = !providerSupportsWebSearch
+    ? '当前服务商未接入联网搜索；请选择 OpenAI。'
+    : state.backendWebSearch === false
+      ? '当前后台版本过旧，尚未加载联网搜索能力；请重启服务。'
+      : '通过 OpenAI Responses API 调用 web_search；搜索模型需支持该工具。';
+}
+
+async function checkServiceHealth() {
+  const status = $('#serviceStatus');
+  try {
+    const response = await fetch('/api/health', { cache: 'no-store' });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error('服务检查失败');
+    state.backendWebSearch = payload.capabilities?.webSearch === true;
+    status.className = `service${state.backendWebSearch ? '' : ' warning'}`;
+    status.querySelector('span').textContent = state.backendWebSearch
+      ? `服务已连接 · API v${payload.apiVersion || 1}`
+      : '后台版本过旧，请重启';
+    updateModelControls();
+    return payload;
+  } catch {
+    state.backendWebSearch = false;
+    status.className = 'service error';
+    status.querySelector('span').textContent = '服务未连接';
+    updateModelControls();
+    return null;
+  }
 }
 
 async function uploadFile(file) {
@@ -278,11 +350,13 @@ function removeFile() {
 function settings() {
   const queryColumn = $('#queryColumn').value;
   const answerColumn = $('#answerColumn').value;
+  const provider = $('#provider').value;
   return {
     apiKey: $('#apiKey').value.trim(), endpoint: $('#endpoint').value.trim(), model: $('#model').value.trim(),
     systemPrompt: $('#systemPrompt').value, userTemplate: $('#userPrompt').value,
-    provider: $('#provider').value, temperature: $('#temperature').value,
+    provider, temperature: $('#temperature').value,
     reasoningEffort: $('#reasoningEffort').value, scorePath: $('#scorePath').value.trim(),
+    webSearchMode: provider === 'openai' ? $('#webSearchMode').value : 'off',
     retryCount: Number($('#retryCount').value), concurrency: Number($('#concurrency').value), queryColumn, answerColumn,
     promptMappings: { ...state.promptMappings }
   };
@@ -361,7 +435,7 @@ async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
         throw error;
       }
       const score = numericScore(payload.output, config.scorePath);
-      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, attempts, elapsed: performance.now() - start };
+      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, webSearch: payload.webSearch, attempts, elapsed: performance.now() - start };
     } catch (error) {
       if (controller.signal.aborted && state.stopRequested) {
         return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'cancelled', score: null, displayOutput: '用户已中断评估', output: null, attempts, elapsed: performance.now() - start };
@@ -455,6 +529,10 @@ async function runEvaluation() {
   if (!config.apiKey) return toast('请先填写 API Key', true);
   if (!config.endpoint || !config.model) return toast('请填写 API 地址和模型名称', true);
   if (!config.systemPrompt.trim() || !config.userTemplate.trim()) return toast('System Prompt 和 User Prompt 不能为空', true);
+  if (config.webSearchMode !== 'off') {
+    await checkServiceHealth();
+    if (state.backendWebSearch !== true) return toast('后台未加载联网搜索能力，请重启服务后重试', true);
+  }
   const unmapped = unmappedPromptVariables(config.promptMappings);
   if (unmapped.length) {
     document.querySelector('.variable-mapping-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -535,7 +613,13 @@ function renderProgress(done, total) {
 
 function filteredResults() {
   const keyword = $('#resultSearch').value.trim().toLowerCase();
-  return state.results.filter(Boolean).filter(item => !keyword || [item.query, item.answer, item.displayOutput].some(value => String(value ?? '').toLowerCase().includes(keyword)));
+  return state.results.filter(Boolean).filter(item => {
+    const searchText = [
+      ...(item.webSearch?.queries || []),
+      ...(item.webSearch?.sources || []).flatMap(source => [source.title, source.url])
+    ].join(' ');
+    return !keyword || [item.query, item.answer, item.displayOutput, searchText].some(value => String(value ?? '').toLowerCase().includes(keyword));
+  });
 }
 
 function renderResults() {
@@ -550,8 +634,10 @@ function renderResults() {
   $('#avgTime').textContent = processed.length ? `${(processed.reduce((sum, item) => sum + item.elapsed, 0) / processed.length / 1000).toFixed(1)}s` : '—';
   const filtered = filteredResults();
   const outputColumns = resultOutputColumns(complete);
+  const showWebSearch = state.lastRunConfig?.webSearchMode && state.lastRunConfig.webSearchMode !== 'off'
+    || complete.some(item => item.webSearch?.used);
   $('#resultCount').textContent = `${filtered.length} 条结果`;
-  $('#resultTable').innerHTML = `<thead><tr><th>#</th><th>问题</th><th>回答</th><th>状态</th>${outputColumns.map(column => `<th>${escapeHtml(column.label)}</th>`).join('')}<th>请求</th><th>耗时</th><th></th></tr></thead><tbody>${filtered.map(item => `<tr><td>${item.rowNumber}</td><td><div class="cell-clamp">${escapeHtml(item.query)}</div></td><td><div class="cell-clamp">${escapeHtml(item.answer)}</div></td><td><span class="status ${item.status}">${item.status === 'success' ? '● 完成' : item.status === 'cancelled' ? '— 已中断' : '× 接口错误'}</span></td>${outputColumns.map(column => `<td><div class="cell-clamp">${escapeHtml(outputCellValue(item.output, column.key, item.displayOutput))}</div></td>`).join('')}<td>${item.attempts || 0}${item.attempts > 1 ? `（重试 ${item.attempts - 1}）` : ''}</td><td>${(item.elapsed / 1000).toFixed(1)}s</td><td><button class="detail-button" data-index="${item.position}">详情</button></td></tr>`).join('')}</tbody>`;
+  $('#resultTable').innerHTML = `<thead><tr><th>#</th><th>问题</th><th>回答</th><th>状态</th>${outputColumns.map(column => `<th>${escapeHtml(column.label)}</th>`).join('')}${showWebSearch ? '<th>联网搜索</th>' : ''}<th>请求</th><th>耗时</th><th></th></tr></thead><tbody>${filtered.map(item => `<tr><td>${item.rowNumber}</td><td><div class="cell-clamp">${escapeHtml(item.query)}</div></td><td><div class="cell-clamp">${escapeHtml(item.answer)}</div></td><td><span class="status ${item.status}">${item.status === 'success' ? '● 完成' : item.status === 'cancelled' ? '— 已中断' : '× 接口错误'}</span></td>${outputColumns.map(column => `<td><div class="cell-clamp">${escapeHtml(outputCellValue(item.output, column.key, item.displayOutput))}</div></td>`).join('')}${showWebSearch ? `<td><span class="search-result-status${item.webSearch?.used ? ' used' : ''}">${escapeHtml(webSearchResultLabel(item))}</span></td>` : ''}<td>${item.attempts || 0}${item.attempts > 1 ? `（重试 ${item.attempts - 1}）` : ''}</td><td>${(item.elapsed / 1000).toFixed(1)}s</td><td><button class="detail-button" data-index="${item.position}">详情</button></td></tr>`).join('')}</tbody>`;
 }
 
 function showDetail(index) {
@@ -577,6 +663,7 @@ function showDetail(index) {
       <span><b>状态</b>${status}</span>
       <span><b>请求次数</b>${item.attempts ?? 0}</span>
       <span><b>耗时</b>${(Number(item.elapsed || 0) / 1000).toFixed(1)}s</span>
+      <span><b>联网搜索</b>${escapeHtml(webSearchModeLabel(config.webSearchMode))}</span>
     </div>
     <div class="detail-actions"><button class="copy-button copy-all" type="button" data-copy-detail="all">复制本条输入与输出</button></div>
     <section class="detail-block detail-full-block">
@@ -587,6 +674,7 @@ function showDetail(index) {
       <div class="detail-block-heading"><span>完整模型输出</span><button class="copy-button" type="button" data-copy-detail="output">复制输出</button></div>
       <pre>${escapeHtml(output)}</pre>
     </section>
+    ${renderWebSearchDetail(item, config)}
     <details class="detail-source">
       <summary>查看原始 Excel 数据字段（${Object.keys(sourceRow).length} 个）</summary>
       <pre>${escapeHtml(sourceFields)}</pre>
@@ -628,9 +716,10 @@ function exportCsv() {
   if (!rows.length) return toast('暂无可导出的结果', true);
   const quote = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
   const { rows: exportRows } = buildExportRows(rows, resultOutputColumns(rows), state.columns, {
-    queryColumn: $('#queryColumn').value,
-    answerColumn: $('#answerColumn').value
-  }, { singleLine: true });
+    ...(state.lastRunConfig || {}),
+    queryColumn: state.lastRunConfig?.queryColumn || $('#queryColumn').value,
+    answerColumn: state.lastRunConfig?.answerColumn || $('#answerColumn').value
+  });
   const csv = '\ufeff' + exportRows.map(row => row.map(quote).join(',')).join('\r\n');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -641,7 +730,7 @@ function exportCsv() {
 
 function exportResults() {
   if (!state.results.filter(Boolean).length) return toast('暂无可导出的结果', true);
-  if (!state.lastRunId) return exportCsv();
+  if (!state.lastRunId) return toast('Excel 文件尚未生成，请等待自动保存完成；也可以单独导出 CSV', true);
   const link = document.createElement('a');
   link.href = `/api/runs/${encodeURIComponent(state.lastRunId)}/download?format=xlsx`;
   link.download = `${state.fileName.replace(/\.xlsx?$/i, '') || 'evaluation'}-评估结果.xlsx`;
@@ -669,10 +758,11 @@ async function loadRunHistory() {
       const id = encodeURIComponent(run.id);
       const range = run.range ? `第 ${run.range.start}–${run.range.end} 条` : '数据范围未知';
       const status = run.status === 'stopped' ? '已中断' : '已完成';
+      const search = run.webSearchMode && run.webSearchMode !== 'off' ? ` · 搜索${webSearchModeLabel(run.webSearchMode)}` : '';
       const sourceLink = run.uploadId
         ? `<a href="/api/uploads/${encodeURIComponent(run.uploadId)}/download">原始 Excel</a>`
         : '';
-      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}</p><div class="history-links"><button class="history-view" type="button" data-view-run="${id}">查看结果</button>${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
+      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}${escapeHtml(search)}</p><div class="history-links"><button class="history-view" type="button" data-view-run="${id}">查看结果</button>${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV（保留换行）</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
     }).join('');
   } catch (error) {
     list.innerHTML = `<p class="history-empty">历史记录读取失败：${escapeHtml(error.message)}</p>`;
@@ -767,6 +857,7 @@ $('#detailContent').addEventListener('click', event => {
   if (button) copyDetail(button.dataset.copyDetail);
 });
 $('#exportButton').addEventListener('click', exportResults);
+$('#exportCsvButton').addEventListener('click', exportCsv);
 $('#refreshHistory').addEventListener('click', loadRunHistory);
 $('#historyList').addEventListener('click', event => {
   const viewButton = event.target.closest('[data-view-run]');
@@ -784,4 +875,5 @@ $('#closeHelp').addEventListener('click', () => $('#helpPopover').classList.add(
 $('#resetButton').addEventListener('click', () => { localStorage.removeItem('judge-studio-settings'); sessionStorage.removeItem('judge-studio-api-key'); location.reload(); });
 
 loadSettings();
+checkServiceHealth();
 loadRunHistory();
