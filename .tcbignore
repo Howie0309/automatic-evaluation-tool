@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+cloudbaserc.json
+data
+node_modules
+test
+Dockerfile
+docker-compose.yml
+Caddyfile
+npm-debug.log
+.DS_Store

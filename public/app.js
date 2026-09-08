@@ -3,6 +3,7 @@ import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPrompt
 import { buildExportRows, deriveOutputColumns, outputCellValue } from './result-export.js';
 import { formatDetailAll, formatDetailInput, formatDetailOutput } from './detail-format.js';
 import { isRetryableError, retryDelay } from './retry.js';
+import { apiFetch, appUrl, downloadApi } from './cloud-runtime.js';
 
 const $ = selector => document.querySelector(selector);
 const state = {
@@ -227,7 +228,7 @@ function updateModelControls() {
 async function checkServiceHealth() {
   const status = $('#serviceStatus');
   try {
-    const response = await fetch('/api/health', { cache: 'no-store' });
+    const response = await apiFetch('/api/health', { cache: 'no-store' });
     const payload = await response.json();
     if (!response.ok || !payload.ok) throw new Error('服务检查失败');
     state.backendWebSearch = payload.capabilities?.webSearch === true;
@@ -251,7 +252,7 @@ async function uploadFile(file) {
   if (file.size > 20 * 1024 * 1024) return toast('文件不能超过 20 MB', true);
   $('#dropzone strong').textContent = '正在解析 Excel…';
   try {
-    const response = await fetch('/api/excel', { method: 'POST', headers: { 'x-file-name': encodeURIComponent(file.name) }, body: await file.arrayBuffer() });
+    const response = await apiFetch('/api/excel', { method: 'POST', headers: { 'x-file-name': encodeURIComponent(file.name) }, body: await file.arrayBuffer() });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || '解析失败');
     if (!payload.sheets?.some(sheet => sheet.rows.length)) throw new Error('Excel 中没有可读取的数据');
@@ -406,7 +407,7 @@ async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
     const controller = new AbortController();
     state.activeControllers.add(controller);
     try {
-      const response = await fetch('/api/evaluate', {
+      const response = await apiFetch('/api/evaluate', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...config, userPrompt: fillTemplate(config.userTemplate, normalized) }),
         signal: controller.signal
@@ -418,7 +419,7 @@ async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
         throw error;
       }
       const score = numericScore(payload.output, config.scorePath);
-      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, webSearch: payload.webSearch, attempts, elapsed: performance.now() - start };
+      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, rawOutput: payload.rawText || '', webSearch: payload.webSearch, attempts, elapsed: performance.now() - start };
     } catch (error) {
       if (controller.signal.aborted && state.stopRequested) {
         return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'cancelled', score: null, displayOutput: '用户已中断评估', output: null, attempts, elapsed: performance.now() - start };
@@ -483,7 +484,7 @@ async function persistCurrentRun(config, range, wasStopped) {
   if (!results.length) return null;
   const { apiKey: _apiKey, ...savedConfig } = config;
   try {
-    const response = await fetch('/api/runs', {
+    const response = await apiFetch('/api/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -711,18 +712,22 @@ function exportCsv() {
   URL.revokeObjectURL(link.href);
 }
 
-function exportResults() {
+async function exportResults() {
   if (!state.results.filter(Boolean).length) return toast('暂无可导出的结果', true);
   if (!state.lastRunId) return toast('Excel 文件尚未生成，请等待自动保存完成；也可以单独导出 CSV', true);
-  const link = document.createElement('a');
-  link.href = `/api/runs/${encodeURIComponent(state.lastRunId)}/download?format=xlsx`;
-  link.download = `${state.fileName.replace(/\.xlsx?$/i, '') || 'evaluation'}-评估结果.xlsx`;
-  link.click();
+  try {
+    await downloadApi(
+      `/api/runs/${encodeURIComponent(state.lastRunId)}/download?format=xlsx`,
+      `${state.fileName.replace(/\.xlsx?$/i, '') || 'evaluation'}-评估结果.xlsx`
+    );
+  } catch (error) {
+    toast(error.message, true);
+  }
 }
 
 function openInteractiveReport() {
   if (!state.lastRunId) return toast('交互报告将在结果自动保存后生成，请稍候', true);
-  window.open(`/report.html?run=${encodeURIComponent(state.lastRunId)}`, '_blank', 'noopener');
+  window.open(appUrl(`report.html?run=${encodeURIComponent(state.lastRunId)}`), '_blank', 'noopener');
 }
 
 function formatHistoryTime(value) {
@@ -734,7 +739,7 @@ async function loadRunHistory() {
   const list = $('#historyList');
   list.innerHTML = '<p class="history-empty">正在读取已保存记录…</p>';
   try {
-    const response = await fetch('/api/runs');
+    const response = await apiFetch('/api/runs');
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || '读取历史记录失败');
     const runs = payload.runs || [];
@@ -748,9 +753,10 @@ async function loadRunHistory() {
       const status = run.status === 'stopped' ? '已中断' : '已完成';
       const search = run.webSearchMode && run.webSearchMode !== 'off' ? ` · 搜索${webSearchModeLabel(run.webSearchMode)}` : '';
       const sourceLink = run.uploadId
-        ? `<a href="/api/uploads/${encodeURIComponent(run.uploadId)}/download">原始 Excel</a>`
+        ? `<a href="#" data-api-download="/api/uploads/${encodeURIComponent(run.uploadId)}/download" data-download-name="${escapeHtml(run.fileName)}">原始 Excel</a>`
         : '';
-      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}${escapeHtml(search)}</p><div class="history-links"><a class="history-view" href="/report.html?run=${id}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5V8.8m4 4.7V5.8m4 7.7V2.5m3 11H1.5"/></svg><span>交互报告</span></a><button class="history-preview" type="button" data-view-run="${id}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M6 6.5V13"/></svg><span>表格预览</span></button>${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV（保留换行）</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
+      const reportHref = appUrl(`report.html?run=${id}`);
+      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}${escapeHtml(search)}</p><div class="history-links"><a class="history-view" href="${reportHref}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5V8.8m4 4.7V5.8m4 7.7V2.5m3 11H1.5"/></svg><span>交互报告</span></a><button class="history-preview" type="button" data-view-run="${id}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M6 6.5V13"/></svg><span>表格预览</span></button>${sourceLink}<a href="#" data-api-download="/api/runs/${id}/download?format=xlsx" data-download-name="evaluation-${id}.xlsx">结果 Excel</a><a href="#" data-api-download="/api/runs/${id}/download?format=json" data-download-name="evaluation-${id}.json">JSON</a><a href="#" data-api-download="/api/runs/${id}/download?format=csv" data-download-name="evaluation-${id}.csv">CSV（保留换行）</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
     }).join('');
   } catch (error) {
     list.innerHTML = `<p class="history-empty">历史记录读取失败：${escapeHtml(error.message)}</p>`;
@@ -763,7 +769,7 @@ async function viewRunRecord(button) {
   button.classList.add('is-loading');
   button.querySelector('span').textContent = '读取中…';
   try {
-    const response = await fetch(`/api/runs/${encodeURIComponent(id)}/download?format=json`);
+    const response = await apiFetch(`/api/runs/${encodeURIComponent(id)}/download?format=json`);
     const record = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(record.error || '读取评估记录失败');
     state.results = (record.results || []).map((item, index) => ({ ...item, position: index }));
@@ -797,7 +803,7 @@ async function deleteRunRecord(button) {
   button.disabled = true;
   button.textContent = '删除中…';
   try {
-    const response = await fetch(`/api/runs/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const response = await apiFetch(`/api/runs/${encodeURIComponent(id)}`, { method: 'DELETE' });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || '删除失败');
     await loadRunHistory();
@@ -851,6 +857,12 @@ $('#exportCsvButton').addEventListener('click', exportCsv);
 $('#reportButton').addEventListener('click', openInteractiveReport);
 $('#refreshHistory').addEventListener('click', loadRunHistory);
 $('#historyList').addEventListener('click', event => {
+  const downloadLink = event.target.closest('[data-api-download]');
+  if (downloadLink) {
+    event.preventDefault();
+    downloadApi(downloadLink.dataset.apiDownload, downloadLink.dataset.downloadName).catch(error => toast(error.message, true));
+    return;
+  }
   const viewButton = event.target.closest('[data-view-run]');
   if (viewButton) return viewRunRecord(viewButton);
   const button = event.target.closest('[data-delete-run]');

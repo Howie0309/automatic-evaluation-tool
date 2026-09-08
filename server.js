@@ -6,7 +6,7 @@ import ExcelJS from 'exceljs';
 import { requestIsAuthorized } from './lib/access-control.js';
 import { callJudge } from './lib/evaluator.js';
 import { parseWorksheet } from './lib/excel.js';
-import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage.js';
+import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage-runtime.js';
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
 const port = Number(process.env.PORT || 3077);
@@ -23,7 +23,10 @@ const mime = {
 };
 
 function json(res, status, data) {
-  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store'
+  });
   res.end(JSON.stringify(data));
 }
 
@@ -124,6 +127,17 @@ async function handleApi(req, res) {
 const server = http.createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent((req.url || '/').split('?')[0]);
+    res.setHeader('access-control-allow-origin', process.env.JUDGE_CORS_ORIGIN || '*');
+    res.setHeader('vary', 'origin');
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS',
+        'access-control-allow-headers': 'authorization,content-type,x-file-name,x-judge-password',
+        'access-control-max-age': '86400'
+      });
+      res.end();
+      return;
+    }
     if (pathname !== '/api/health' && !requestIsAuthorized(req)) {
       res.writeHead(401, {
         'content-type': 'text/plain; charset=utf-8',
@@ -157,6 +171,6 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`Judge Studio running at http://localhost:${port}`);
 });

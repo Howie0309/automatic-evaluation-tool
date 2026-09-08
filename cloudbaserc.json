@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "job-hop-calculator-d1cu811a446ba",
+  "functionRoot": ".",
+  "functions": [
+    {
+      "name": "judge-studio",
+      "type": "HTTP",
+      "runtime": "Nodejs20.19",
+      "dir": ".",
+      "buildStrategy": "zip",
+      "handler": "server.main",
+      "timeout": 900,
+      "memorySize": 512,
+      "installDependency": true,
+      "envVariables": {
+        "TCB_ENV": "job-hop-calculator-d1cu811a446ba",
+        "JUDGE_STORAGE_BACKEND": "cloudbase",
+        "JUDGE_CORS_ORIGIN": "https://job-hop-calculator-d1cu811a446ba-1319255386.tcloudbaseapp.com"
+      }
+    }
+  ]
+}

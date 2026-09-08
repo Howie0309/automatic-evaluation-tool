@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
   <title>Judge Studio · 自动评估工作台</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <div class="shell">
@@ -116,7 +116,7 @@
           <input id="fileInput" type="file" accept=".xlsx" hidden>
           <span class="upload-icon">↥</span>
           <strong>拖拽 Excel 到这里，或点击选择</strong>
-          <small>上传后会自动保存到本机服务</small>
+          <small>上传后会自动保存到服务端，便于稍后继续查看和下载</small>
         </label>
 
         <div class="dataset-card hidden" id="datasetCard">
@@ -208,6 +208,6 @@
   <div class="toast" id="toast" role="status"></div>
   <div class="help-popover hidden" id="helpPopover" role="dialog"><button type="button" id="closeHelp">×</button><h3 id="helpTitle"></h3><p id="helpText"></p></div>
   <dialog id="detailDialog"><button class="dialog-close" id="closeDialog" type="button" aria-label="关闭详情">×</button><span class="eyebrow">EVALUATION DETAIL</span><h2>单条评估详情</h2><div id="detailContent"></div></dialog>
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>

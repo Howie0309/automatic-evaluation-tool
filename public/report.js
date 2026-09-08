@@ -1,5 +1,6 @@
 import { deriveOutputColumns, outputCellValue } from './result-export.js';
 import { buildScoreMetrics, numericValue, paginate, valueAtPath } from './report-metrics.js';
+import { apiFetch, downloadApi } from './cloud-runtime.js';
 
 const $ = selector => document.querySelector(selector);
 const state = {
@@ -58,7 +59,12 @@ async function copyText(value, label) {
 
 function actionLink(label, href, primary = false) {
   const link = element('a', primary ? 'action-link primary' : 'action-link', label);
-  link.href = href;
+  if (href.startsWith('/api/')) {
+    link.href = '#';
+    link.dataset.apiDownload = href;
+  } else {
+    link.href = href;
+  }
   return link;
 }
 
@@ -297,6 +303,13 @@ function renderResults() {
 }
 
 function bindControls() {
+  $('#reportActions').addEventListener('click', event => {
+    const link = event.target.closest('[data-api-download]');
+    if (!link) return;
+    event.preventDefault();
+    const extension = new URLSearchParams(link.dataset.apiDownload.split('?')[1] || '').get('format') || 'json';
+    downloadApi(link.dataset.apiDownload, `evaluation-${state.record.id}.${extension}`).catch(error => reportToast(error.message, true));
+  });
   $('#reportSearch').addEventListener('input', event => { state.query = event.target.value.trim(); state.page = 1; renderResults(); });
   $('#statusFilter').addEventListener('change', event => { state.status = event.target.value; state.page = 1; renderResults(); });
   $('#sortOrder').addEventListener('change', event => { state.sort = event.target.value; state.page = 1; renderResults(); });
@@ -322,7 +335,7 @@ async function loadReport() {
   if (!record) {
     const runId = new URLSearchParams(location.search).get('run') || '';
     if (!/^[0-9a-f-]{36}$/i.test(runId)) throw new Error('报告地址缺少有效的评估记录 ID');
-    const response = await fetch(`/api/runs/${encodeURIComponent(runId)}/download?format=json`);
+    const response = await apiFetch(`/api/runs/${encodeURIComponent(runId)}/download?format=json`);
     record = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(record.error || '评估报告读取失败');
   }

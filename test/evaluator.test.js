@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { callJudge, extractWebSearchMetadata, normalizeEndpoint, parseJudgeOutput, renderTemplate, valueAtPath } from '../lib/evaluator.js';
 import ExcelJS from 'exceljs';
-import { buildResultsCsv, buildResultsXlsx, deleteRun, listRuns, readRunArtifact, readUploadArtifact, sanitizeFilename, saveRun, saveUpload } from '../lib/storage.js';
+import { buildResultsCsv, buildResultsXlsx, deleteRun, listRuns, normalizeRunOutputs, readRunArtifact, readUploadArtifact, sanitizeFilename, saveRun, saveUpload } from '../lib/storage.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from '../public/prompt-mapping.js';
 import { extractDeclaredFields } from '../public/prompt-fields.js';
 import { buildExportRows, buildExportSchema, deriveOutputColumns, outputCellValue } from '../public/result-export.js';
@@ -13,13 +13,24 @@ import { formatDetailAll, formatDetailInput, formatDetailOutput } from '../publi
 import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
 import { buildScoreMetrics, inferScoreScale, paginate } from '../public/report-metrics.js';
-import { verifyBasicAuthorization } from '../lib/access-control.js';
+import { requestIsAuthorized, verifyBasicAuthorization } from '../lib/access-control.js';
 
 test('cloud access password is optional locally and validates Basic authorization', () => {
   assert.equal(verifyBasicAuthorization('', 'judge', ''), true);
   assert.equal(verifyBasicAuthorization('', 'judge', 'secret'), false);
   assert.equal(verifyBasicAuthorization(`Basic ${Buffer.from('judge:secret').toString('base64')}`, 'judge', 'secret'), true);
   assert.equal(verifyBasicAuthorization(`Basic ${Buffer.from('judge:wrong').toString('base64')}`, 'judge', 'secret'), false);
+});
+
+test('cloud access password also accepts the dedicated browser header', () => {
+  assert.equal(requestIsAuthorized(
+    { headers: { 'x-judge-password': 'secret-value' } },
+    { JUDGE_ACCESS_PASSWORD: 'secret-value' }
+  ), true);
+  assert.equal(requestIsAuthorized(
+    { headers: { 'x-judge-password': 'wrong-value' } },
+    { JUDGE_ACCESS_PASSWORD: 'secret-value' }
+  ), false);
 });
 
 test('report metrics detect nested score fields and calculate aggregates', () => {
@@ -72,6 +83,34 @@ test('parseJudgeOutput accepts plain and fenced JSON', () => {
   assert.deepEqual(parseJudgeOutput('```json\n{"score":9}\n```'), { score: 9 });
   assert.deepEqual(parseJudgeOutput('结果如下： {"score":7,"reason":"ok"}'), { score: 7, reason: 'ok' });
   assert.equal(parseJudgeOutput('合格：回答覆盖了关键事实。'), '合格：回答覆盖了关键事实。');
+});
+
+test('parseJudgeOutput merges adjacent top-level objects returned by a judge', () => {
+  assert.deepEqual(
+    parseJudgeOutput('{"judge":{"analysis":"ok"}},{"score":-2,"reason":"concise"} }'),
+    { judge: { analysis: 'ok' }, score: -2, reason: 'concise' }
+  );
+  assert.deepEqual(
+    parseJudgeOutput('"{\\"score\\":4,\\"reason\\":\\"ok\\"}"'),
+    { score: 4, reason: 'ok' }
+  );
+  assert.deepEqual(
+    parseJudgeOutput('{"judge":{"analysis":"ok"},{"score":-2,"reason":"concise"} }'),
+    { judge: { analysis: 'ok' }, score: -2, reason: 'concise' }
+  );
+  assert.deepEqual(
+    parseJudgeOutput('{"judge":{"analysis":{"score":-2}},"reason":"concise"'),
+    { judge: { analysis: { score: -2 } }, reason: 'concise' }
+  );
+});
+
+test('stored judge strings are re-parsed when an existing run is read', () => {
+  const record = normalizeRunOutputs({
+    outputColumns: [{ key: '__raw__', label: '模型输出' }],
+    results: [{ status: 'success', output: '{"judge":{"analysis":"ok"},{"score":-2} }' }]
+  });
+  assert.deepEqual(record.results[0].output, { judge: { analysis: 'ok' }, score: -2 });
+  assert.deepEqual(record.outputColumns.map(column => column.key), ['judge.analysis', 'score']);
 });
 
 test('valueAtPath supports nested score', () => {
