@@ -8,6 +8,77 @@ function uniqueLabel(label, used) {
   return candidate;
 }
 
+function isPlainObject(value) {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function valueAtPath(value, path) {
+  if (!path || value == null || typeof value !== 'object') return undefined;
+  if (Object.prototype.hasOwnProperty.call(value, path)) return value[path];
+  const separator = path.indexOf('.');
+  if (separator < 0) return value[path];
+  return valueAtPath(value[path.slice(0, separator)], path.slice(separator + 1));
+}
+
+function collectLeafPaths(value, prefix, paths) {
+  if (isPlainObject(value)) {
+    const keys = Object.keys(value);
+    if (keys.length) {
+      for (const key of keys) collectLeafPaths(value[key], prefix ? `${prefix}.${key}` : key, paths);
+      return;
+    }
+  }
+  if (prefix && !paths.includes(prefix)) paths.push(prefix);
+}
+
+export function deriveOutputColumns(results = [], preferredColumns = []) {
+  const actualPaths = [];
+  let hasPlainOutput = false;
+  let hasNonSuccess = false;
+
+  for (const item of Array.isArray(results) ? results : []) {
+    if (!item) continue;
+    if (item.status && item.status !== 'success') {
+      hasNonSuccess = true;
+      continue;
+    }
+    if (isPlainObject(item.output)) collectLeafPaths(item.output, '', actualPaths);
+    else hasPlainOutput = true;
+  }
+
+  const columns = [];
+  const seen = new Set();
+  const addColumn = column => {
+    const key = String(column?.key ?? '');
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    columns.push({ key, label: String(column?.label || key) });
+  };
+
+  for (const preferred of Array.isArray(preferredColumns) ? preferredColumns : []) {
+    const key = String(preferred?.key ?? '');
+    if (!key || key === '__raw__') continue;
+    const matches = actualPaths.filter(path => path === key || path.startsWith(`${key}.`));
+    if (!matches.length) {
+      addColumn(preferred);
+      continue;
+    }
+    for (const path of matches) {
+      const suffix = path === key ? '' : path.slice(key.length);
+      addColumn({ key: path, label: `${preferred.label || key}${suffix}` });
+    }
+  }
+  for (const path of actualPaths) addColumn({ key: path, label: path });
+
+  if (hasPlainOutput || hasNonSuccess || !columns.length) {
+    const label = hasPlainOutput && hasNonSuccess
+      ? '模型输出 / 错误信息'
+      : hasNonSuccess ? '错误/中断信息' : '模型输出';
+    addColumn({ key: '__raw__', label });
+  }
+  return columns;
+}
+
 export function buildExportSchema(inputColumns = [], outputColumns = [], { includeWebSearch = false } = {}) {
   const sourceColumns = [...new Set((Array.isArray(inputColumns) ? inputColumns : []).map(String))];
   const used = new Set(sourceColumns);
@@ -29,11 +100,14 @@ export function buildExportSchema(inputColumns = [], outputColumns = [], { inclu
 }
 
 export function outputCellValue(output, key, fallback = '') {
-  if (key === '__raw__') return typeof output === 'string' ? output : output == null ? fallback : JSON.stringify(output);
+  if (key === '__raw__') {
+    if (isPlainObject(output)) return '';
+    return typeof output === 'string' ? output : output == null ? fallback : JSON.stringify(output, null, 2);
+  }
   if (output == null || typeof output !== 'object') return '';
-  const value = String(key || '').split('.').reduce((current, part) => current?.[part], output);
+  const value = valueAtPath(output, String(key || ''));
   if (value == null) return '';
-  return typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
 }
 
 export function singleLineCell(value) {

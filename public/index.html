@@ -44,7 +44,7 @@
             <div class="label-row"><label for="systemPrompt">System Prompt</label><span>定义评审员的角色和原则</span></div>
             <textarea id="systemPrompt" rows="5">你是一个严格、稳定的质量评审员。请根据给定标准评估回答质量，仅输出合法 JSON 对象，不要输出 Markdown 或额外文字。</textarea>
             <div class="output-variables">
-              <div><span>输出变量</span><small>从当前 Prompt 的 JSON 字段自动识别，仅用于提示</small></div>
+              <div><span>输出变量</span><small>对象子字段自动展开，数组作为一个字段合并保留</small></div>
               <div class="output-chips" id="outputVariables"><code>自由文本 / 任意结构</code></div>
             </div>
           </div>
@@ -189,14 +189,14 @@
           </div>
           <div class="result-toolbar">
             <div><h3>评估结果</h3><span id="resultCount">0 条结果</span></div>
-            <div><input id="resultSearch" placeholder="搜索问题、回答或模型输出"><button class="secondary-button" id="exportCsvButton" type="button">导出 CSV</button><button class="secondary-button" id="exportButton" type="button">导出 Excel</button></div>
+            <div><input id="resultSearch" placeholder="搜索问题、回答或模型输出"><button class="secondary-button" id="reportButton" type="button">交互报告</button><button class="secondary-button" id="exportCsvButton" type="button">导出 CSV</button><button class="secondary-button" id="exportButton" type="button">导出 Excel</button></div>
           </div>
           <div class="table-wrap"><table id="resultTable"></table></div>
         </div>
 
         <div class="history-block">
           <div class="history-heading">
-            <div><h3>已保存记录</h3><span>原始 Excel、结果 Excel、JSON 和 CSV 保存在本机 data 目录</span></div>
+            <div><h3>已保存记录</h3><span>可直接查看交互报告，原始文件与导出结果保存在本机 data 目录</span></div>
             <button class="secondary-button" id="refreshHistory" type="button">刷新</button>
           </div>
           <div class="history-list" id="historyList"><p class="history-empty">暂无已保存的评估记录</p></div>

@@ -8,10 +8,60 @@ import ExcelJS from 'exceljs';
 import { buildResultsCsv, buildResultsXlsx, deleteRun, listRuns, readRunArtifact, readUploadArtifact, sanitizeFilename, saveRun, saveUpload } from '../lib/storage.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from '../public/prompt-mapping.js';
 import { extractDeclaredFields } from '../public/prompt-fields.js';
-import { buildExportRows, buildExportSchema } from '../public/result-export.js';
+import { buildExportRows, buildExportSchema, deriveOutputColumns, outputCellValue } from '../public/result-export.js';
 import { formatDetailAll, formatDetailInput, formatDetailOutput } from '../public/detail-format.js';
 import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
+import { buildScoreMetrics, inferScoreScale, paginate } from '../public/report-metrics.js';
+import { verifyBasicAuthorization } from '../lib/access-control.js';
+
+test('cloud access password is optional locally and validates Basic authorization', () => {
+  assert.equal(verifyBasicAuthorization('', 'judge', ''), true);
+  assert.equal(verifyBasicAuthorization('', 'judge', 'secret'), false);
+  assert.equal(verifyBasicAuthorization(`Basic ${Buffer.from('judge:secret').toString('base64')}`, 'judge', 'secret'), true);
+  assert.equal(verifyBasicAuthorization(`Basic ${Buffer.from('judge:wrong').toString('base64')}`, 'judge', 'secret'), false);
+});
+
+test('report metrics detect nested score fields and calculate aggregates', () => {
+  const results = [
+    { status: 'success', output: { information: { score: 4 }, language: { score: 3 } } },
+    { status: 'success', output: { information: { score: 2 }, language: { score: 3 } } },
+    { status: 'error', output: null }
+  ];
+  const metrics = buildScoreMetrics(results, [
+    { key: 'information.score', label: '信息冗余·分数' },
+    { key: 'language.score', label: '语言精炼·分数' }
+  ]);
+  assert.equal(metrics.fields.length, 2);
+  assert.equal(metrics.fields[0].average, 3);
+  assert.equal(metrics.fields[0].minimum, 2);
+  assert.equal(metrics.fields[0].maximum, 4);
+  assert.equal(metrics.chartMaximum, 4);
+});
+
+test('report score scale and pagination are deterministic', () => {
+  assert.equal(inferScoreScale([1, 4]), 4);
+  assert.equal(inferScoreScale([4.5]), 5);
+  assert.equal(inferScoreScale([8]), 10);
+  assert.deepEqual(paginate([1, 2, 3, 4, 5], 2, 2), { items: [3, 4], page: 2, pageSize: 2, totalPages: 3, total: 5, start: 2 });
+});
+
+test('output and report metrics support score keys containing dots', () => {
+  const results = [{ status: 'success', output: { score: { '1.1': 4, '2.1': 3 } } }];
+  const columns = deriveOutputColumns(results, [{ key: 'score', label: '分数' }]);
+  assert.equal(outputCellValue(results[0].output, 'score.1.1'), '4');
+  const metrics = buildScoreMetrics(results, columns);
+  assert.equal(metrics.fields.length, 2);
+  assert.deepEqual(metrics.fields.map(field => field.average), [4, 3]);
+});
+
+test('report metrics do not treat arbitrary numeric output as a score', () => {
+  const metrics = buildScoreMetrics([{ status: 'success', output: { year: 2026, score_note: 3 } }], [
+    { key: 'year', label: '年份' },
+    { key: 'score_note', label: '评分备注' }
+  ]);
+  assert.deepEqual(metrics.fields.map(field => field.key), ['score_note']);
+});
 
 test('renderTemplate supports nested values and missing values', () => {
   assert.equal(renderTemplate('{{query}} / {{meta.lang}} / {{missing}}', { query: 'Q', meta: { lang: 'zh' } }), 'Q / zh / ');
@@ -316,6 +366,68 @@ test('export schema preserves source labels and prefixes conflicting evaluation 
   assert.deepEqual(schema.inputColumns, ['query', 'score', '评估状态']);
   assert.equal(schema.labels.status, '评估_评估状态');
   assert.deepEqual(schema.outputs.map(column => column.exportLabel), ['评估_score', 'reason', '评估_评估状态_2']);
+});
+
+test('nested output objects expand into leaf columns while arrays stay merged', () => {
+  const output = {
+    task_need: '简要回答',
+    information_redundancy: {
+      score: 3,
+      reason: '存在少量扩展',
+      issues: [{ quote: '原文', problem: '重复', suggestion: '删除' }]
+    },
+    language_concision: { score: 4, reason: '表达精炼', issues: [] }
+  };
+  const results = [
+    { status: 'success', output, displayOutput: JSON.stringify(output) },
+    { status: 'cancelled', output: null, displayOutput: '用户已中断评估' }
+  ];
+  const columns = deriveOutputColumns(results, [
+    { key: 'task_need', label: 'task_need' },
+    { key: 'information_redundancy', label: 'information_redundancy' },
+    { key: 'language_concision', label: 'language_concision' },
+    { key: '__raw__', label: '模型输出' }
+  ]);
+  assert.deepEqual(columns.map(column => column.key), [
+    'task_need',
+    'information_redundancy.score',
+    'information_redundancy.reason',
+    'information_redundancy.issues',
+    'language_concision.score',
+    'language_concision.reason',
+    'language_concision.issues',
+    '__raw__'
+  ]);
+  assert.equal(columns.at(-1).label, '错误/中断信息');
+  assert.equal(outputCellValue(output, 'information_redundancy.score'), '3');
+  assert.match(outputCellValue(output, 'information_redundancy.issues'), /\n  \{/);
+  assert.equal(outputCellValue(output, '__raw__', JSON.stringify(output)), '');
+  assert.equal(outputCellValue(null, '__raw__', '用户已中断评估'), '用户已中断评估');
+});
+
+test('Excel generation upgrades legacy top-level columns to nested leaf columns', async () => {
+  const content = await buildResultsXlsx([
+    {
+      rowNumber: 1,
+      status: 'success',
+      output: { evaluation: { score: 4, reason: '清晰', issues: [{ quote: '原文' }] } },
+      displayOutput: 'legacy raw output'
+    },
+    { rowNumber: 2, status: 'cancelled', output: null, displayOutput: '用户已中断评估' }
+  ], [
+    { key: 'evaluation', label: 'evaluation' },
+    { key: '__raw__', label: '模型输出' }
+  ]);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(content);
+  const sheet = workbook.getWorksheet('评估结果');
+  const headers = sheet.getRow(1).values.slice(1);
+  assert.deepEqual(headers.slice(3, 7), [
+    'evaluation.score', 'evaluation.reason', 'evaluation.issues', '错误/中断信息'
+  ]);
+  assert.equal(sheet.getRow(2).getCell(headers.indexOf('evaluation.score') + 1).value, '4');
+  assert.equal(sheet.getRow(2).getCell(headers.indexOf('错误/中断信息') + 1).value, '');
+  assert.equal(sheet.getRow(3).getCell(headers.indexOf('错误/中断信息') + 1).value, '用户已中断评估');
 });
 
 test('exports web search status, queries and sources when search is enabled', () => {

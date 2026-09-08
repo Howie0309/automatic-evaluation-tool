@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
+import { requestIsAuthorized } from './lib/access-control.js';
 import { callJudge } from './lib/evaluator.js';
 import { parseWorksheet } from './lib/excel.js';
 import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage.js';
@@ -122,13 +123,22 @@ async function handleApi(req, res) {
 
 const server = http.createServer(async (req, res) => {
   try {
+    const pathname = decodeURIComponent((req.url || '/').split('?')[0]);
+    if (pathname !== '/api/health' && !requestIsAuthorized(req)) {
+      res.writeHead(401, {
+        'content-type': 'text/plain; charset=utf-8',
+        'www-authenticate': 'Basic realm="Judge Studio", charset="UTF-8"',
+        'cache-control': 'no-store'
+      });
+      res.end('请输入 Judge Studio 访问账号和密码');
+      return;
+    }
     if (req.url?.startsWith('/api/')) {
       const handled = await handleApi(req, res);
       if (handled === false) json(res, 404, { error: '接口不存在' });
       return;
     }
 
-    const pathname = decodeURIComponent((req.url || '/').split('?')[0]);
     const requested = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
     const safePath = normalize(requested).replace(/^(\.\.(\/|\\|$))+/, '');
     const file = join(root, safePath);

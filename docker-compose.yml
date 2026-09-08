@@ -1,0 +1,39 @@
+services:
+  judge-studio:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: 3077
+      JUDGE_STORAGE_DIR: /app/data
+      JUDGE_ACCESS_USER: ${JUDGE_ACCESS_USER:-judge}
+      JUDGE_ACCESS_PASSWORD: ${JUDGE_ACCESS_PASSWORD:?Please set JUDGE_ACCESS_PASSWORD in .env.deploy}
+    volumes:
+      - judge_data:/app/data
+    networks:
+      - judge_network
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      judge-studio:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN:?Please set DOMAIN in .env.deploy}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - judge_network
+
+networks:
+  judge_network:
+
+volumes:
+  judge_data:
+  caddy_data:
+  caddy_config:

@@ -1,6 +1,6 @@
 import { extractDeclaredFields } from './prompt-fields.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from './prompt-mapping.js';
-import { buildExportRows, outputCellValue } from './result-export.js';
+import { buildExportRows, deriveOutputColumns, outputCellValue } from './result-export.js';
 import { formatDetailAll, formatDetailInput, formatDetailOutput } from './detail-format.js';
 import { isRetryableError, retryDelay } from './retry.js';
 
@@ -383,24 +383,7 @@ function outputText(output) {
 
 function resultOutputColumns(results = state.results.filter(Boolean)) {
   const declared = extractDeclaredFields(state.lastRunConfig?.systemPrompt || $('#systemPrompt').value);
-  const actual = [];
-  let needsRawColumn = false;
-  for (const item of results) {
-    if (item.status !== 'success') {
-      needsRawColumn = true;
-      continue;
-    }
-    const output = item.output;
-    if (output && typeof output === 'object' && !Array.isArray(output)) {
-      for (const key of Object.keys(output)) if (!actual.includes(key)) actual.push(key);
-    } else {
-      needsRawColumn = true;
-    }
-  }
-  const fields = [...declared, ...actual.filter(field => !declared.includes(field))];
-  const columns = fields.map(field => ({ key: field, label: field }));
-  if (needsRawColumn || !columns.length) columns.push({ key: '__raw__', label: '模型输出' });
-  return columns;
+  return deriveOutputColumns(results, declared.map(field => ({ key: field, label: field })));
 }
 
 function fillTemplate(template, data) {
@@ -737,6 +720,11 @@ function exportResults() {
   link.click();
 }
 
+function openInteractiveReport() {
+  if (!state.lastRunId) return toast('交互报告将在结果自动保存后生成，请稍候', true);
+  window.open(`/report.html?run=${encodeURIComponent(state.lastRunId)}`, '_blank', 'noopener');
+}
+
 function formatHistoryTime(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '时间未知' : date.toLocaleString('zh-CN', { hour12: false });
@@ -762,7 +750,7 @@ async function loadRunHistory() {
       const sourceLink = run.uploadId
         ? `<a href="/api/uploads/${encodeURIComponent(run.uploadId)}/download">原始 Excel</a>`
         : '';
-      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}${escapeHtml(search)}</p><div class="history-links"><button class="history-view" type="button" data-view-run="${id}">查看结果</button>${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV（保留换行）</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
+      return `<article class="history-item"><div class="history-main"><strong>${escapeHtml(run.fileName)}</strong><span>${escapeHtml(formatHistoryTime(run.createdAt))} · ${escapeHtml(run.model || '未知模型')}</span></div><p class="history-meta">${status} · ${range} · ${run.resultCount} 条结果 · 成功 ${run.successCount}${escapeHtml(search)}</p><div class="history-links"><a class="history-view" href="/report.html?run=${id}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5V8.8m4 4.7V5.8m4 7.7V2.5m3 11H1.5"/></svg><span>交互报告</span></a><button class="history-preview" type="button" data-view-run="${id}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12M6 6.5V13"/></svg><span>表格预览</span></button>${sourceLink}<a href="/api/runs/${id}/download?format=xlsx">结果 Excel</a><a href="/api/runs/${id}/download?format=json">JSON</a><a href="/api/runs/${id}/download?format=csv">CSV（保留换行）</a><button class="history-delete" type="button" data-delete-run="${id}" data-file-name="${escapeHtml(run.fileName)}">删除</button></div></article>`;
     }).join('');
   } catch (error) {
     list.innerHTML = `<p class="history-empty">历史记录读取失败：${escapeHtml(error.message)}</p>`;
@@ -772,7 +760,8 @@ async function loadRunHistory() {
 async function viewRunRecord(button) {
   const id = button.dataset.viewRun;
   button.disabled = true;
-  button.textContent = '读取中…';
+  button.classList.add('is-loading');
+  button.querySelector('span').textContent = '读取中…';
   try {
     const response = await fetch(`/api/runs/${encodeURIComponent(id)}/download?format=json`);
     const record = await response.json().catch(() => ({}));
@@ -796,7 +785,8 @@ async function viewRunRecord(button) {
     toast(error.message, true);
   } finally {
     button.disabled = false;
-    button.textContent = '查看结果';
+    button.classList.remove('is-loading');
+    button.querySelector('span').textContent = '表格预览';
   }
 }
 
@@ -858,6 +848,7 @@ $('#detailContent').addEventListener('click', event => {
 });
 $('#exportButton').addEventListener('click', exportResults);
 $('#exportCsvButton').addEventListener('click', exportCsv);
+$('#reportButton').addEventListener('click', openInteractiveReport);
 $('#refreshHistory').addEventListener('click', loadRunHistory);
 $('#historyList').addEventListener('click', event => {
   const viewButton = event.target.closest('[data-view-run]');

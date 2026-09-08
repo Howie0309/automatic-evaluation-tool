@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>评估交互报告 · Judge Studio</title>
+  <link rel="stylesheet" href="/report.css">
+</head>
+<body>
+  <header class="report-topbar">
+    <a class="report-brand" href="/"><span>J</span><strong>Judge Studio</strong></a>
+    <a class="back-link" href="/">← 返回评估工作台</a>
+  </header>
+
+  <main class="report-shell">
+    <section class="report-hero">
+      <div>
+        <span class="eyebrow">INTERACTIVE EVALUATION REPORT</span>
+        <h1 id="reportTitle">正在载入评估报告…</h1>
+        <p id="reportMeta">请稍候</p>
+      </div>
+      <div class="report-actions" id="reportActions"></div>
+    </section>
+
+    <section class="metric-grid" id="metricGrid" aria-label="评估概览"></section>
+
+    <section class="analysis-panel hidden" id="scoreSection">
+      <div class="panel-heading">
+        <div><span class="section-index">01</span><div><h2>各评分维度均分</h2><p id="scoreDescription">自动识别 System Prompt 约定的数值评分字段</p></div></div>
+        <span class="chart-legend"><i></i>实际均分</span>
+      </div>
+      <div class="score-chart" id="scoreChart"></div>
+    </section>
+
+    <section class="control-panel">
+      <div class="panel-heading compact">
+        <div><span class="section-index">02</span><div><h2>逐条评估预览</h2><p>点击答案或结论卡片可展开完整内容</p></div></div>
+        <div class="pagination"><button id="previousPage" type="button">上一页</button><strong id="pageStatus">第 1/1 页</strong><button id="nextPage" type="button">下一页</button></div>
+      </div>
+      <div class="filter-row">
+        <label class="search-box"><span>搜索</span><input id="reportSearch" type="search" placeholder="搜索问题、回答、结论或来源"></label>
+        <label><span>状态</span><select id="statusFilter"><option value="all">全部状态</option><option value="success">成功</option><option value="error">接口错误</option><option value="cancelled">已中断</option></select></label>
+        <label><span>排序</span><select id="sortOrder"><option value="row-asc">数据序号升序</option><option value="row-desc">数据序号降序</option><option value="slow-first">耗时最长优先</option></select></label>
+        <div class="bulk-actions"><button id="expandAll" type="button">展开全部</button><button id="collapseAll" type="button">收起全部</button></div>
+      </div>
+      <div class="field-filter-head"><div><strong>展示字段</strong><span>点击控制结论字段的显示与隐藏</span></div><button id="toggleFields" type="button">全部隐藏</button></div>
+      <div class="field-filters" id="fieldFilters"></div>
+    </section>
+
+    <div class="result-summary"><strong id="visibleCount">0 条结果</strong><span>当前页可批量展开或收起</span></div>
+    <section class="report-list" id="reportList"></section>
+    <section class="empty-report hidden" id="emptyReport"><strong>没有匹配的结果</strong><p>请调整搜索词或状态筛选。</p></section>
+  </main>
+
+  <div class="report-toast" id="reportToast" role="status"></div>
+  <script type="module" src="/report.js"></script>
+</body>
+</html>
