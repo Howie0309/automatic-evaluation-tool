@@ -5,8 +5,6 @@ services:
     environment:
       PORT: 3077
       JUDGE_STORAGE_DIR: /app/data
-      JUDGE_ACCESS_USER: ${JUDGE_ACCESS_USER:-judge}
-      JUDGE_ACCESS_PASSWORD: ${JUDGE_ACCESS_PASSWORD:?Please set JUDGE_ACCESS_PASSWORD in .env.deploy}
     volumes:
       - judge_data:/app/data
     networks:

@@ -38,13 +38,13 @@ tcb routes edit --data '{"domain":"*","routes":[{"path":"/api","enablePathTransm
 tcb hosting deploy ./public judge-studio --safe --verify --entry index.html,report.html
 ```
 
-上线前应在云函数环境变量中设置 `JUDGE_ACCESS_USER` 与 `JUDGE_ACCESS_PASSWORD`，为业务接口启用独立密码保护；密码不要写入 `cloudbaserc.json` 或前端代码。浏览器访问还需开启匿名登录，并用 OPA 只放行所需的 `/api/*` 函数路由。免费体验版额度用尽后会停服，不会自动转为按量扣费。
+浏览器访问需开启腾讯云匿名登录，并用 OPA 只放行所需的 `/api/*` 函数路由。平台不再要求额外的自定义访问密码。免费体验版额度用尽后会停服，不会自动转为按量扣费。
 
 ### Docker / 云服务器
 
 项目包含 `Dockerfile`、`docker-compose.yml` 和 Caddy HTTPS 反向代理配置，可部署到阿里云、腾讯云或百度智能云的国内 Linux 云服务器。`judge_data` 数据卷持久保存上传的 Excel 和评估结果，容器更新不会清空。
 
-云端建议配置 `JUDGE_ACCESS_PASSWORD` 开启访问保护，并使用绑定到服务器的域名由 Caddy 自动提供 HTTPS。可复制 `.env.deploy.example` 为 `.env.deploy`，填写域名、访问账号和强密码，再运行：
+云端建议使用绑定到服务器的域名，由 Caddy 自动提供 HTTPS。可复制 `.env.deploy.example` 为 `.env.deploy`，填写域名后运行：
 
 ```bash
 docker compose --env-file .env.deploy up -d --build

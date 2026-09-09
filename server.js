@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
-import { requestIsAuthorized } from './lib/access-control.js';
 import { callJudge } from './lib/evaluator.js';
 import { parseWorksheet } from './lib/excel.js';
 import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage-runtime.js';
@@ -132,19 +131,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS',
-        'access-control-allow-headers': 'authorization,content-type,x-file-name,x-judge-password',
+        'access-control-allow-headers': 'authorization,content-type,x-file-name',
         'access-control-max-age': '86400'
       });
       res.end();
-      return;
-    }
-    if (pathname !== '/api/health' && !requestIsAuthorized(req)) {
-      res.writeHead(401, {
-        'content-type': 'text/plain; charset=utf-8',
-        'www-authenticate': 'Basic realm="Judge Studio", charset="UTF-8"',
-        'cache-control': 'no-store'
-      });
-      res.end('请输入 Judge Studio 访问账号和密码');
       return;
     }
     if (req.url?.startsWith('/api/')) {

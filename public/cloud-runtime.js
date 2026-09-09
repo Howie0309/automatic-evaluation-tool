@@ -32,18 +32,6 @@ async function accessToken(force = false) {
   return payload.access_token;
 }
 
-function accessPassword(force = false) {
-  const key = 'judge_cloud_password';
-  if (!force) {
-    const existing = sessionStorage.getItem(key);
-    if (existing) return existing;
-  }
-  const value = window.prompt('请输入 Judge Studio 访问密码');
-  if (!value) throw new Error('未输入平台访问密码');
-  sessionStorage.setItem(key, value);
-  return value;
-}
-
 function remoteApiUrl(path) {
   return `${serviceBase}${path}`;
 }
@@ -57,17 +45,10 @@ export async function apiFetch(path, options = {}, retry = true) {
   if (!cloudMode) return fetch(path, options);
   const headers = new Headers(options.headers || {});
   headers.set('authorization', `Bearer ${await accessToken()}`);
-  headers.set('x-judge-password', accessPassword());
   const response = await fetch(remoteApiUrl(path), { ...options, headers });
   if (response.status !== 401 || !retry) return response;
-  const payload = await response.clone().json().catch(() => ({}));
-  if (payload.code === 'INVALID_CREDENTIALS' || payload.code === 'MISSING_CREDENTIALS') {
-    sessionStorage.removeItem('judge_cloud_token');
-    await accessToken(true);
-  } else {
-    sessionStorage.removeItem('judge_cloud_password');
-    accessPassword(true);
-  }
+  sessionStorage.removeItem('judge_cloud_token');
+  await accessToken(true);
   return apiFetch(path, options, false);
 }
 

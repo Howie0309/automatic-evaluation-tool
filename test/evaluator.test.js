@@ -13,25 +13,6 @@ import { formatDetailAll, formatDetailInput, formatDetailOutput } from '../publi
 import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
 import { buildScoreMetrics, inferScoreScale, paginate } from '../public/report-metrics.js';
-import { requestIsAuthorized, verifyBasicAuthorization } from '../lib/access-control.js';
-
-test('cloud access password is optional locally and validates Basic authorization', () => {
-  assert.equal(verifyBasicAuthorization('', 'judge', ''), true);
-  assert.equal(verifyBasicAuthorization('', 'judge', 'secret'), false);
-  assert.equal(verifyBasicAuthorization(`Basic ${Buffer.from('judge:secret').toString('base64')}`, 'judge', 'secret'), true);
-  assert.equal(verifyBasicAuthorization(`Basic ${Buffer.from('judge:wrong').toString('base64')}`, 'judge', 'secret'), false);
-});
-
-test('cloud access password also accepts the dedicated browser header', () => {
-  assert.equal(requestIsAuthorized(
-    { headers: { 'x-judge-password': 'secret-value' } },
-    { JUDGE_ACCESS_PASSWORD: 'secret-value' }
-  ), true);
-  assert.equal(requestIsAuthorized(
-    { headers: { 'x-judge-password': 'wrong-value' } },
-    { JUDGE_ACCESS_PASSWORD: 'secret-value' }
-  ), false);
-});
 
 test('report metrics detect nested score fields and calculate aggregates', () => {
   const results = [
