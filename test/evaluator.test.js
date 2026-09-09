@@ -14,6 +14,14 @@ import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
 import { buildScoreMetrics, inferScoreScale, paginate } from '../public/report-metrics.js';
 import { applicationOwnsCors } from '../lib/cors.js';
+import { normalizeRange } from '../public/range.js';
+
+test('range inputs allow incomplete typing and normalize only when committed', () => {
+  assert.deepEqual(normalizeRange('', '479', 479), { start: 1, end: 479 });
+  assert.deepEqual(normalizeRange('500', '20', 479), { start: 479, end: 479 });
+  assert.deepEqual(normalizeRange('5', '', 479), { start: 5, end: 479 });
+  assert.deepEqual(normalizeRange('5', '100', 479), { start: 5, end: 100 });
+});
 
 test('CloudBase gateway owns CORS headers while local and Docker runtimes keep application CORS', () => {
   assert.equal(applicationOwnsCors({ JUDGE_STORAGE_BACKEND: 'cloudbase' }), false);

@@ -4,6 +4,7 @@ import { buildExportRows, deriveOutputColumns, outputCellValue } from './result-
 import { formatDetailAll, formatDetailInput, formatDetailOutput } from './detail-format.js';
 import { isRetryableError, retryDelay } from './retry.js';
 import { apiFetch, appUrl, downloadApi } from './cloud-runtime.js';
+import { normalizeRange } from './range.js';
 
 const $ = selector => document.querySelector(selector);
 const state = {
@@ -346,11 +347,11 @@ function guessColumn(candidates, fallback) {
   return found || state.columns[fallback] || '';
 }
 
-function updatePreview() {
+function updatePreview({ commitRange = false } = {}) {
   const queryColumn = $('#queryColumn').value;
   const answerColumn = $('#answerColumn').value;
   const range = selectedRange();
-  if (range.rows.length) {
+  if (commitRange && range.rows.length) {
     $('#rangeStart').value = range.start;
     $('#rangeEnd').value = range.end;
   }
@@ -366,10 +367,18 @@ function updatePreview() {
 
 function selectedRange() {
   if (!state.rows.length) return { start: 0, end: 0, rows: [] };
-  const total = state.rows.length;
-  const start = Math.min(total, Math.max(1, Number.parseInt($('#rangeStart').value, 10) || 1));
-  const end = Math.min(total, Math.max(start, Number.parseInt($('#rangeEnd').value, 10) || total));
+  const { start, end } = normalizeRange($('#rangeStart').value, $('#rangeEnd').value, state.rows.length);
   return { start, end, rows: state.rows.slice(start - 1, end) };
+}
+
+function commitRangeInputs() {
+  updatePreview({ commitRange: true });
+}
+
+function commitRangeOnEnter(event) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  event.currentTarget.blur();
 }
 
 function applyRangePreset(preset) {
@@ -385,7 +394,7 @@ function applyRangePreset(preset) {
     $('#rangeStart').value = 1;
     $('#rangeEnd').value = total;
   }
-  updatePreview();
+  updatePreview({ commitRange: true });
 }
 
 function removeFile() {
@@ -891,6 +900,12 @@ $('#promptMappings').addEventListener('change', event => {
 });
 $('#rangeStart').addEventListener('input', updatePreview);
 $('#rangeEnd').addEventListener('input', updatePreview);
+$('#rangeStart').addEventListener('change', commitRangeInputs);
+$('#rangeEnd').addEventListener('change', commitRangeInputs);
+$('#rangeStart').addEventListener('blur', commitRangeInputs);
+$('#rangeEnd').addEventListener('blur', commitRangeInputs);
+$('#rangeStart').addEventListener('keydown', commitRangeOnEnter);
+$('#rangeEnd').addEventListener('keydown', commitRangeOnEnter);
 document.querySelectorAll('[data-range]').forEach(button => button.addEventListener('click', () => applyRangePreset(button.dataset.range)));
 $('#removeFile').addEventListener('click', removeFile);
 $('#runButton').addEventListener('click', runEvaluation);
