@@ -16,9 +16,21 @@ const state = {
 };
 
 const providers = {
-  deepseek: { endpoint: 'https://api.deepseek.com/v1', models: ['deepseek-chat', 'deepseek-reasoner'] },
-  openai: { endpoint: 'https://api.openai.com/v1', models: ['gpt-5.6', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-4.1-mini'] },
-  siliconflow: { endpoint: 'https://api.siliconflow.cn/v1', models: ['deepseek-ai/DeepSeek-V3.2', 'Qwen/Qwen3-30B-A3B-Instruct-2507'] },
+  deepseek: { endpoint: 'https://api.deepseek.com/v1', models: [
+    { id: 'deepseek-chat', label: 'DeepSeek Chat' },
+    { id: 'deepseek-reasoner', label: 'DeepSeek Reasoner · 深度思考' }
+  ] },
+  openai: { endpoint: 'https://api.openai.com/v1', models: [
+    { id: 'gpt-6-astra', label: 'GPT-6 Astra · 最新旗舰' },
+    { id: 'gpt-5.6', label: 'GPT-5.6 Sol · 专业旗舰' },
+    { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra · 均衡' },
+    { id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna · 快速省钱' },
+    { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini · 兼容旧任务' }
+  ] },
+  siliconflow: { endpoint: 'https://api.siliconflow.cn/v1', models: [
+    { id: 'deepseek-ai/DeepSeek-V3.2', label: 'DeepSeek V3.2' },
+    { id: 'Qwen/Qwen3-30B-A3B-Instruct-2507', label: 'Qwen3 30B A3B' }
+  ] },
   custom: { endpoint: '', models: [] }
 };
 
@@ -173,9 +185,46 @@ function updateProvider(overwrite = true) {
   const config = providers[$('#provider').value];
   if (overwrite) {
     $('#endpoint').value = config.endpoint;
-    $('#model').value = config.models[0] || '';
+    $('#model').value = config.models[0]?.id || '';
   }
-  $('#modelSuggestions').innerHTML = config.models.map(model => `<option value="${escapeHtml(model)}"></option>`).join('');
+  syncModelPicker();
+  updateReasoningOptions();
+  saveSettings();
+}
+
+function syncModelPicker() {
+  const config = providers[$('#provider').value];
+  const model = $('#model').value.trim();
+  const isPreset = config.models.some(option => option.id === model);
+  $('#modelPreset').innerHTML = [
+    ...config.models.map(option => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.label)}</option>`),
+    '<option value="__custom__">自定义模型 ID…</option>'
+  ].join('');
+  $('#modelPreset').value = isPreset ? model : '__custom__';
+  $('#modelCustom').classList.toggle('hidden', isPreset);
+  $('#modelCustom').value = isPreset ? '' : model;
+  $('#modelHelp').textContent = $('#provider').value === 'openai'
+    ? 'GPT-6 Astra 为最新旗舰；模型需要你的 OpenAI API 账户已开通对应权限。'
+    : '可快速切换常用模型，也可选择“自定义模型 ID”。';
+}
+
+function selectModelPreset() {
+  const value = $('#modelPreset').value;
+  const custom = value === '__custom__';
+  $('#modelCustom').classList.toggle('hidden', !custom);
+  if (custom) {
+    $('#model').value = $('#modelCustom').value.trim();
+    $('#modelCustom').focus();
+  } else {
+    $('#model').value = value;
+    $('#modelCustom').value = '';
+  }
+  updateReasoningOptions();
+  saveSettings();
+}
+
+function updateCustomModel() {
+  $('#model').value = $('#modelCustom').value.trim();
   updateReasoningOptions();
   saveSettings();
 }
@@ -191,7 +240,8 @@ function updateReasoningOptions() {
   };
   let efforts = ['auto', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
   if (provider === 'openai') {
-    if (/^gpt-5\.6/i.test(model)) efforts = ['auto', 'none', 'low', 'medium', 'high', 'xhigh', 'max'];
+    if (/^gpt-6-astra/i.test(model)) efforts = ['auto', 'low', 'medium', 'high', 'xhigh', 'max'];
+    else if (/^gpt-5\.6/i.test(model)) efforts = ['auto', 'none', 'low', 'medium', 'high', 'xhigh', 'max'];
     else if (/^gpt-5\.[245]/i.test(model)) efforts = ['auto', 'none', 'low', 'medium', 'high', 'xhigh'];
     else if (/^gpt-5\.1/i.test(model)) efforts = ['auto', 'none', 'low', 'medium', 'high'];
     else if (/^gpt-5(?:-|$)/i.test(model)) efforts = ['auto', 'minimal', 'low', 'medium', 'high'];
@@ -207,7 +257,7 @@ function updateReasoningOptions() {
 
 function updateModelControls() {
   const provider = $('#provider').value;
-  const isOpenAIReasoning = provider === 'openai' && /^(gpt-5|o[134])/i.test($('#model').value.trim());
+  const isOpenAIReasoning = provider === 'openai' && /^(gpt-[56]|o[134])/i.test($('#model').value.trim());
   $('#temperature').disabled = isOpenAIReasoning;
   $('#temperatureHelp').textContent = isOpenAIReasoning
     ? '当前为 OpenAI 推理模型：使用“思考强度”，温度不会发送。'
@@ -817,7 +867,8 @@ async function deleteRunRecord(button) {
 
 document.querySelectorAll('.step').forEach(step => step.addEventListener('click', () => document.getElementById(step.dataset.target).scrollIntoView({ behavior: 'smooth' })));
 $('#provider').addEventListener('change', () => updateProvider(true));
-$('#model').addEventListener('input', updateReasoningOptions);
+$('#modelPreset').addEventListener('change', selectModelPreset);
+$('#modelCustom').addEventListener('input', updateCustomModel);
 persistedIds.forEach(id => $(`#${id}`).addEventListener('input', () => { if (id === 'temperature') $('#temperatureValue').value = $(`#${id}`).value; saveSettings(); }));
 $('#systemPrompt').addEventListener('input', updateOutputVariables);
 $('#userPrompt').addEventListener('input', renderPromptMappings);

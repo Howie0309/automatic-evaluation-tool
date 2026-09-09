@@ -69,8 +69,13 @@
             </select>
           </div>
           <div class="field">
-            <label for="model">评估模型</label>
-            <div class="input-with-action"><input id="model" list="modelSuggestions" value="deepseek-chat"><datalist id="modelSuggestions"></datalist><span>可输入</span></div>
+            <label for="modelPreset">评估模型</label>
+            <div class="model-picker">
+              <select id="modelPreset" aria-label="选择评估模型"></select>
+              <input id="modelCustom" class="hidden" autocomplete="off" placeholder="输入模型 ID，例如 gpt-6-astra">
+              <input id="model" type="hidden" value="deepseek-chat">
+            </div>
+            <small class="field-help" id="modelHelp">可快速切换常用模型，也可选择“自定义模型 ID”。</small>
           </div>
           <div class="field span-2">
             <label for="endpoint">API 地址</label>
