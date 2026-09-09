@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
 import { callJudge } from './lib/evaluator.js';
 import { parseWorksheet } from './lib/excel.js';
+import { applicationOwnsCors } from './lib/cors.js';
 import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage-runtime.js';
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
@@ -126,14 +127,18 @@ async function handleApi(req, res) {
 const server = http.createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent((req.url || '/').split('?')[0]);
-    res.setHeader('access-control-allow-origin', process.env.JUDGE_CORS_ORIGIN || '*');
-    res.setHeader('vary', 'origin');
+    const ownsCors = applicationOwnsCors();
+    if (ownsCors) {
+      res.setHeader('access-control-allow-origin', process.env.JUDGE_CORS_ORIGIN || '*');
+      res.setHeader('vary', 'origin');
+    }
     if (req.method === 'OPTIONS') {
-      res.writeHead(204, {
+      const headers = ownsCors ? {
         'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS',
         'access-control-allow-headers': 'authorization,content-type,x-file-name',
         'access-control-max-age': '86400'
-      });
+      } : {};
+      res.writeHead(204, headers);
       res.end();
       return;
     }

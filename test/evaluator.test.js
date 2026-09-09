@@ -13,6 +13,14 @@ import { formatDetailAll, formatDetailInput, formatDetailOutput } from '../publi
 import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
 import { buildScoreMetrics, inferScoreScale, paginate } from '../public/report-metrics.js';
+import { applicationOwnsCors } from '../lib/cors.js';
+
+test('CloudBase gateway owns CORS headers while local and Docker runtimes keep application CORS', () => {
+  assert.equal(applicationOwnsCors({ JUDGE_STORAGE_BACKEND: 'cloudbase' }), false);
+  assert.equal(applicationOwnsCors({ TCB_ENV: 'example-env' }), false);
+  assert.equal(applicationOwnsCors({ JUDGE_STORAGE_BACKEND: 'local' }), true);
+  assert.equal(applicationOwnsCors({}), true);
+});
 
 test('report metrics detect nested score fields and calculate aggregates', () => {
   const results = [
