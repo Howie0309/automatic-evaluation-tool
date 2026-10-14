@@ -11,3 +11,7 @@ export function formatDetailOutput(output, fallback = '') {
 export function formatDetailAll(input, output) {
   return `${String(input)}\n\n====================\n\n【模型输出】\n${String(output)}`;
 }
+
+export function formatDetailPair(userPrompt, output) {
+  return `【User Prompt】\n${String(userPrompt)}\n\n====================\n\n【模型输出】\n${String(output)}`;
+}

@@ -10,7 +10,7 @@ import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, save
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
 const port = Number(process.env.PORT || 3077);
-const maxBody = 20 * 1024 * 1024;
+const maxBody = 100 * 1024 * 1024;
 const apiVersion = 2;
 const startedAt = new Date().toISOString();
 
@@ -47,7 +47,7 @@ function readBody(req) {
     req.on('data', chunk => {
       size += chunk.length;
       if (size > maxBody) {
-        reject(new Error('文件不能超过 20 MB'));
+        reject(new Error('文件不能超过 100 MB'));
         req.destroy();
         return;
       }

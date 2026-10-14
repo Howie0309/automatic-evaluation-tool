@@ -9,7 +9,7 @@ import { buildResultsCsv, buildResultsXlsx, deleteRun, listRuns, normalizeRunOut
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from '../public/prompt-mapping.js';
 import { extractDeclaredFields } from '../public/prompt-fields.js';
 import { buildExportRows, buildExportSchema, deriveOutputColumns, outputCellValue } from '../public/result-export.js';
-import { formatDetailAll, formatDetailInput, formatDetailOutput } from '../public/detail-format.js';
+import { formatDetailAll, formatDetailInput, formatDetailOutput, formatDetailPair } from '../public/detail-format.js';
 import { parseWorksheet } from '../lib/excel.js';
 import { isRetryableError, retryDelay } from '../public/retry.js';
 import { buildScoreMetrics, inferScoreScale, paginate } from '../public/report-metrics.js';
@@ -121,6 +121,7 @@ test('detail formatter preserves complete model input and output for copying', (
   assert.match(input, /【User Prompt】\n问题：测试\n回答：完整内容/);
   assert.equal(output, '{\n  "result": "PASS",\n  "reason": "完整理由"\n}');
   assert.match(formatDetailAll(input, output), /【模型输出】[\s\S]*完整理由/);
+  assert.equal(formatDetailPair('问题：测试', output), `【User Prompt】\n问题：测试\n\n====================\n\n【模型输出】\n${output}`);
   assert.equal(formatDetailOutput('**Markdown**\n完整输出'), '**Markdown**\n完整输出');
 });
 

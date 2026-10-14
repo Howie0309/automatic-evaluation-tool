@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
   <title>Judge Studio · 自动评估工作台</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260910-detail-layout">
 </head>
 <body>
   <div class="shell">
@@ -115,7 +115,7 @@
       <section class="panel" id="dataSection">
         <div class="section-heading">
           <div><span class="section-number">02</span><h2>上传评估文件</h2></div>
-          <p>支持 .xlsx，首行为列名，单个文件最大 20 MB。</p>
+          <p>支持 .xlsx，首行为列名，单个文件最大 100 MB。</p>
         </div>
         <label class="dropzone" id="dropzone" for="fileInput">
           <input id="fileInput" type="file" accept=".xlsx" hidden>
@@ -213,6 +213,6 @@
   <div class="toast" id="toast" role="status"></div>
   <div class="help-popover hidden" id="helpPopover" role="dialog"><button type="button" id="closeHelp">×</button><h3 id="helpTitle"></h3><p id="helpText"></p></div>
   <dialog id="detailDialog"><button class="dialog-close" id="closeDialog" type="button" aria-label="关闭详情">×</button><span class="eyebrow">EVALUATION DETAIL</span><h2>单条评估详情</h2><div id="detailContent"></div></dialog>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=20261009-upload-100mb"></script>
 </body>
 </html>

@@ -228,6 +228,13 @@ dialog h2 { margin: 10px 0 24px; font: 600 27px Georgia, "Songti SC", serif; }
 .detail-meta span { padding: 10px 12px; color: var(--ink); background: var(--paper); border-radius: 8px; font-size: 11px; }
 .detail-meta b { display: block; margin-bottom: 4px; color: var(--muted); font-size: 8px; letter-spacing: .08em; }
 .detail-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+.detail-system { margin-top: 17px; overflow: hidden; background: #f7f9f6; border: 1px solid var(--line); border-radius: 10px; }
+.detail-system summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; color: var(--green); font-size: 11px; font-weight: 800; cursor: pointer; list-style-position: inside; }
+.detail-system summary small { color: var(--muted); font-size: 9px; font-weight: 500; }
+.detail-system[open] summary { border-bottom: 1px solid var(--line); }
+.detail-system-body { padding: 14px; }
+.detail-system-body pre { margin: 0; padding: 14px; white-space: pre-wrap; word-break: break-word; background: #fff; border-radius: 8px; font: 11px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; user-select: text; }
+.detail-io-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
 .detail-block { margin-top: 17px; }
 .detail-block span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .1em; }
 .detail-block pre, .detail-block p { margin: 0; padding: 12px; white-space: pre-wrap; word-break: break-word; background: var(--paper); border-radius: 8px; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -279,4 +286,5 @@ dialog h2 { margin: 10px 0 24px; font: 600 27px Georgia, "Songti SC", serif; }
   .step span { display: none; }
   dialog { width: calc(100% - 18px); max-height: calc(100vh - 18px); padding: 24px 16px; }
   .detail-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .detail-io-grid { grid-template-columns: 1fr; gap: 0; }
 }

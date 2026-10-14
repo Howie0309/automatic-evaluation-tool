@@ -1,7 +1,7 @@
 import { extractDeclaredFields } from './prompt-fields.js';
 import { buildPromptData, EMPTY_MAPPING, extractTemplateVariables, suggestPromptMapping } from './prompt-mapping.js';
 import { buildExportRows, deriveOutputColumns, outputCellValue } from './result-export.js';
-import { formatDetailAll, formatDetailInput, formatDetailOutput } from './detail-format.js';
+import { formatDetailOutput, formatDetailPair } from './detail-format.js';
 import { isRetryableError, retryDelay } from './retry.js';
 import { apiFetch, appUrl, downloadApi } from './cloud-runtime.js';
 import { normalizeRange } from './range.js';
@@ -23,7 +23,7 @@ const providers = {
   ] },
   openai: { endpoint: 'https://api.openai.com/v1', models: [
     { id: 'gpt-6-astra', label: 'GPT-6 Astra · 最新旗舰' },
-    { id: 'gpt-5.6', label: 'GPT-5.6 Sol · 专业旗舰' },
+    { id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol · 专业旗舰' },
     { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra · 均衡' },
     { id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna · 快速省钱' },
     { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini · 兼容旧任务' }
@@ -160,6 +160,9 @@ function loadSettings() {
     if (saved[id] == null) return;
     if (el.type === 'checkbox') el.checked = saved[id]; else el.value = saved[id];
   });
+  if ($('#provider').value === 'openai' && $('#model').value.trim() === 'gpt-5.6') {
+    $('#model').value = 'gpt-5.6-sol';
+  }
   $('#apiKey').value = sessionStorage.getItem('judge-studio-api-key') || '';
   updateProvider(false);
   if (saved.reasoningEffort && [...$('#reasoningEffort').options].some(option => option.value === saved.reasoningEffort)) {
@@ -300,7 +303,7 @@ async function checkServiceHealth() {
 
 async function uploadFile(file) {
   if (!file || !/\.xlsx$/i.test(file.name)) return toast('请选择 .xlsx 文件', true);
-  if (file.size > 20 * 1024 * 1024) return toast('文件不能超过 20 MB', true);
+  if (file.size > 100 * 1024 * 1024) return toast('文件不能超过 100 MB', true);
   $('#dropzone strong').textContent = '正在解析 Excel…';
   try {
     const response = await apiFetch('/api/excel', { method: 'POST', headers: { 'x-file-name': encodeURIComponent(file.name) }, body: await file.arrayBuffer() });
@@ -694,9 +697,14 @@ function showDetail(index) {
   const sourceRow = item.sourceRow && Object.keys(item.sourceRow).length ? item.sourceRow : fallbackRow;
   const promptData = buildPromptData(sourceRow, config);
   const renderedUserPrompt = fillTemplate(config.userTemplate || '', promptData);
-  const input = formatDetailInput({ systemPrompt: config.systemPrompt, userPrompt: renderedUserPrompt });
   const output = formatDetailOutput(item.output, item.displayOutput);
-  state.detailCopy = { input, output, all: formatDetailAll(input, output) };
+  const systemPrompt = String(config.systemPrompt || '');
+  state.detailCopy = {
+    system: systemPrompt,
+    user: renderedUserPrompt,
+    output,
+    all: formatDetailPair(renderedUserPrompt, output)
+  };
   const status = item.status === 'success' ? '完成' : item.status === 'cancelled' ? '已中断' : '接口错误';
   const sourceFields = JSON.stringify(sourceRow, null, 2);
   $('#detailContent').innerHTML = `
@@ -708,15 +716,24 @@ function showDetail(index) {
       <span><b>耗时</b>${(Number(item.elapsed || 0) / 1000).toFixed(1)}s</span>
       <span><b>联网搜索</b>${escapeHtml(webSearchModeLabel(config.webSearchMode))}</span>
     </div>
-    <div class="detail-actions"><button class="copy-button copy-all" type="button" data-copy-detail="all">复制本条输入与输出</button></div>
-    <section class="detail-block detail-full-block">
-      <div class="detail-block-heading"><span>完整模型输入</span><button class="copy-button" type="button" data-copy-detail="input">复制输入</button></div>
-      <pre>${escapeHtml(input)}</pre>
-    </section>
-    <section class="detail-block detail-full-block">
-      <div class="detail-block-heading"><span>完整模型输出</span><button class="copy-button" type="button" data-copy-detail="output">复制输出</button></div>
-      <pre>${escapeHtml(output)}</pre>
-    </section>
+    <details class="detail-system">
+      <summary><span>System Prompt</span><small>点击展开完整内容</small></summary>
+      <div class="detail-system-body">
+        <div class="detail-block-heading"><span>完整 System Prompt</span><button class="copy-button" type="button" data-copy-detail="system">复制 System Prompt</button></div>
+        <pre>${escapeHtml(systemPrompt)}</pre>
+      </div>
+    </details>
+    <div class="detail-actions"><button class="copy-button copy-all" type="button" data-copy-detail="all">复制 User Prompt 与输出</button></div>
+    <div class="detail-io-grid">
+      <section class="detail-block detail-full-block">
+        <div class="detail-block-heading"><span>完整 User Prompt</span><button class="copy-button" type="button" data-copy-detail="user">复制 User Prompt</button></div>
+        <pre>${escapeHtml(renderedUserPrompt)}</pre>
+      </section>
+      <section class="detail-block detail-full-block">
+        <div class="detail-block-heading"><span>完整模型输出</span><button class="copy-button" type="button" data-copy-detail="output">复制输出</button></div>
+        <pre>${escapeHtml(output)}</pre>
+      </section>
+    </div>
     ${renderWebSearchDetail(item, config)}
     <details class="detail-source">
       <summary>查看原始 Excel 数据字段（${Object.keys(sourceRow).length} 个）</summary>
@@ -748,7 +765,13 @@ async function copyDetail(kind) {
   if (!text) return toast('暂无可复制的内容', true);
   try {
     await copyText(text);
-    toast(kind === 'input' ? '本条完整输入已复制' : kind === 'output' ? '本条完整输出已复制' : '本条输入与输出已复制');
+    const messages = {
+      system: 'System Prompt 已复制',
+      user: 'User Prompt 已复制',
+      output: '模型输出已复制',
+      all: 'User Prompt 与模型输出已复制'
+    };
+    toast(messages[kind] || '内容已复制');
   } catch (error) {
     toast(error.message, true);
   }
