@@ -5,13 +5,24 @@ import { formatDetailOutput, formatDetailPair } from './detail-format.js';
 import { isRetryableError, retryDelay } from './retry.js';
 import { apiFetch, appUrl, downloadApi } from './cloud-runtime.js';
 import { normalizeRange } from './range.js';
+import { buildRuleAttachment, composeJudgeSystemPrompt } from './rule-attachment.js';
+import { ruleImageLabel, validateRuleImages } from './rule-images.js';
+import { clearRuleDraft, loadRuleDraft, ruleSettingsSnapshot, saveRuleDraft } from './rule-cache.js';
+import { buildPdfRuleAttachment, parsePdfPages } from './rule-pdf.js';
+import { MAX_DATASET_UPLOAD_BYTES, MAX_RULE_UPLOAD_BYTES } from './upload-limits.js';
+import { caseImagesForRow, datasetPromptRow } from './dataset-images.js';
+import { datasetImagesHtml, hydrateDatasetImages } from './dataset-image-view.js';
 
 const $ = selector => document.querySelector(selector);
 const state = {
   workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null,
   promptMappings: {},
+  datasetUploading: false,
+  imageColumns: [],
+  ruleAttachment: null, ruleWorkbook: null, rulePdf: null, rulesUploading: false, ruleError: '',
+  ruleCacheId: null, ruleSaveVersion: 0, rulesSaving: false, rulesLoading: true,
   lastRunConfig: null, detailCopy: { input: '', output: '', all: '' },
-  backendWebSearch: null,
+  backendWebSearch: null, backendRuleImages: null, backendDatasetImages: null,
   running: false, paused: false, stopRequested: false,
   activeControllers: new Set(), pauseWaiters: new Set(), stopWaiters: new Set()
 };
@@ -151,9 +162,20 @@ function renderPromptMappings({ syncPrimary = false } = {}) {
   updateMappingWarning();
 }
 
-function loadSettings() {
+async function loadSettings() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('judge-studio-settings') || '{}'); } catch {}
+  state.ruleAttachment = saved.ruleAttachment?.text ? saved.ruleAttachment : null;
+  if (state.ruleAttachment?.cacheId) {
+    state.ruleCacheId = state.ruleAttachment.cacheId;
+    try {
+      const draft = await loadRuleDraft(state.ruleCacheId);
+      if (!draft) throw new Error('已保存的规则图片缺失，请重新上传规则文件');
+      validateRuleImages(draft.images);
+      state.ruleAttachment = draft;
+    } catch (error) { state.ruleError = error.message; }
+  }
+  renderRuleFile();
   persistedIds.forEach(id => {
     const el = $(`#${id}`);
     if (id === 'reasoningEffort') return;
@@ -173,6 +195,7 @@ function loadSettings() {
   $('#temperatureValue').value = $('#temperature').value;
   updateOutputVariables();
   renderPromptMappings();
+  state.rulesLoading = false;
 }
 
 function saveSettings() {
@@ -181,8 +204,186 @@ function saveSettings() {
     const el = $(`#${id}`);
     settings[id] = el.type === 'checkbox' ? el.checked : el.value;
   });
+  settings.ruleAttachment = ruleSettingsSnapshot(state.ruleAttachment, state.ruleCacheId);
   localStorage.setItem('judge-studio-settings', JSON.stringify(settings));
   sessionStorage.setItem('judge-studio-api-key', $('#apiKey').value);
+}
+
+function renderRuleFile() {
+  const attachment = state.ruleAttachment;
+  $('#ruleFileName').textContent = state.rulePdf?.fileName || state.ruleWorkbook?.fileName || attachment?.fileName || '尚未添加规则文件';
+  $('#removeRuleFile').classList.toggle('hidden', !attachment && !state.ruleWorkbook && !state.rulePdf);
+  $('#rulePdfOptions').classList.toggle('hidden', !state.rulePdf);
+  if (state.rulePdf) {
+    $('#ruleSheetOptions').textContent = '';
+    $('#rulePdfInfo').textContent = `共 ${state.rulePdf.pageCount} 页。留空读取全部，或填写 1-3,5；最多 30 页。修改后点击「读取选中页」应用。`;
+    $('#ruleWarning').classList.add('hidden');
+    renderRulePreview();
+  } else if (state.ruleWorkbook) {
+    $('#ruleSheetOptions').innerHTML = state.ruleWorkbook.sheets.map((sheet, index) => `
+      <div class="rule-sheet-row">
+        <label><input type="checkbox" data-rule-sheet="${index}" checked><span>${escapeHtml(sheet.name)}<small>${sheet.rowCount} 行 × ${sheet.columnCount} 列 · ${sheet.images?.length || 0} 张图片</small></span></label>
+        <label><span>单元格范围</span><input type="text" data-rule-range="${index}" aria-label="${escapeHtml(sheet.name)} 的单元格范围" placeholder="全部，或 A1:D20"></label>
+      </div>`).join('');
+    const warnings = [...new Set(state.ruleWorkbook.sheets.flatMap(sheet => sheet.warnings || []))];
+    $('#ruleWarning').textContent = warnings.join(' ');
+    $('#ruleWarning').classList.toggle('hidden', !warnings.length);
+    updateRulePreview();
+  } else {
+    $('#ruleSheetOptions').textContent = attachment
+      ? `已保存规则：${(attachment.selections || []).map(item => `${item.name}（${item.range}）`).join('、')}。重新上传可调整范围。`
+      : '';
+    $('#ruleWarning').classList.add('hidden');
+    renderRulePreview();
+  }
+}
+
+function renderRulePreview() {
+  $('#ruleError').textContent = state.ruleError;
+  $('#ruleError').classList.toggle('hidden', !state.ruleError);
+  const attachment = state.ruleError ? null : state.ruleAttachment;
+  $('#rulePreview').classList.toggle('hidden', !attachment);
+  $('#rulePreviewText').textContent = attachment?.text || '';
+  $('#rulePreviewSummary').textContent = `预览发送给模型的规则（${(attachment?.text.length || 0).toLocaleString('zh-CN')} 字符 · ${attachment?.images?.length || 0} ${attachment?.fileType === 'pdf' ? '页 PDF' : '张图片'}）`;
+  $('#rulePreviewImages').innerHTML = ruleImagesHtml(attachment?.images || []);
+  $('#ruleImageHelp').classList.toggle('hidden', !attachment?.images?.length);
+}
+
+function ruleImagesHtml(images, processing = []) {
+  return images.map((image, index) => {
+    const label = ruleImageLabel(image, index);
+    const dimensions = processing[index];
+    const sizing = dimensions ? `${dimensions.resized ? `原图 ${dimensions.originalWidth} × ${dimensions.originalHeight} → ` : ''}发送 ${dimensions.width} × ${dimensions.height} 像素` : '';
+    if (!/^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/]+=*$/.test(image.dataUrl || '')) return '';
+    return `<details class="rule-image-card"><summary><img src="${escapeHtml(image.dataUrl)}" alt="${escapeHtml(label)}" loading="lazy"><span>${escapeHtml(label)}${sizing ? `<small>${escapeHtml(sizing)}</small>` : ''}<small>点击展开原图</small></span></summary><img class="rule-full-image" src="${escapeHtml(image.dataUrl)}" alt="${escapeHtml(label)}原图" loading="lazy"></details>`;
+  }).join('');
+}
+
+async function updateRulePreview() {
+  if (!state.ruleWorkbook) return;
+  const version = ++state.ruleSaveVersion;
+  state.rulesSaving = true;
+  try {
+    const selections = [...$('#ruleSheetOptions').querySelectorAll('[data-rule-sheet]:checked')].map(input => ({
+      name: state.ruleWorkbook.sheets[Number(input.dataset.ruleSheet)].name,
+      range: $('#ruleSheetOptions').querySelector(`[data-rule-range="${input.dataset.ruleSheet}"]`).value
+    }));
+    const attachment = buildRuleAttachment(state.ruleWorkbook.fileName, state.ruleWorkbook.sheets, selections);
+    await commitRuleAttachment(attachment);
+    if (version !== state.ruleSaveVersion) return;
+  } catch (error) {
+    if (version !== state.ruleSaveVersion) return;
+    state.ruleError = error.message;
+  } finally {
+    if (version === state.ruleSaveVersion) state.rulesSaving = false;
+  }
+  renderRulePreview();
+}
+
+async function commitRuleAttachment(attachment) {
+  const previousCacheId = state.ruleCacheId;
+  const cacheId = attachment.images?.length ? crypto.randomUUID() : null;
+  state.ruleAttachment = attachment;
+  state.ruleCacheId = cacheId;
+  state.ruleError = '';
+  saveSettings();
+  renderRulePreview();
+  if (cacheId) await saveRuleDraft(cacheId, attachment);
+  else if (previousCacheId) await clearRuleDraft();
+}
+
+function setRulesUploading(value) {
+  state.rulesUploading = value;
+  for (const id of ['ruleFileInput', 'rulePdfPages', 'applyRulePdfPages']) $('#' + id).disabled = value;
+  $('#applyRulePdfPages').textContent = value ? '正在读取…' : '读取选中页';
+}
+
+async function requestPdf(file, query) {
+  const response = await apiFetch('/api/rules/pdf' + query, { method: 'POST', body: await file.arrayBuffer() });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'PDF 读取失败，请确认本地服务已更新');
+  return payload;
+}
+
+async function readPdfSelection() {
+  const range = $('#rulePdfPages').value;
+  parsePdfPages(range, state.rulePdf.pageCount);
+  const parsed = await requestPdf(state.rulePdf.file, '?pages=' + encodeURIComponent(range));
+  await commitRuleAttachment(buildPdfRuleAttachment(state.rulePdf.fileName, parsed));
+}
+
+async function applyPdfPages() {
+  if (!state.rulePdf || state.running || state.rulesUploading || state.rulesSaving) return;
+  setRulesUploading(true);
+  try {
+    await readPdfSelection();
+    toast('PDF 规则已读取，请确认页面预览');
+  } catch (error) {
+    state.ruleError = error.message;
+    toast(error.message, true);
+  } finally {
+    setRulesUploading(false);
+    renderRulePreview();
+  }
+}
+
+async function uploadRuleFile(file) {
+  if (!file) return;
+  if (state.rulesLoading) return toast('请等待已保存的规则加载完成后再上传', true);
+  if (state.running) return toast('请等待当前评估结束后再更换规则文件', true);
+  if (state.rulesUploading || state.rulesSaving) return toast('请等待当前规则操作完成', true);
+  if (!/\.(xlsx|pdf)$/i.test(file.name)) return toast('规则文件请选择 .xlsx 或 .pdf 格式', true);
+  if (file.size > MAX_RULE_UPLOAD_BYTES) return toast('规则文件不能超过 100 MB', true);
+  setRulesUploading(true);
+  $('#ruleFileName').textContent = '正在读取评审规则…';
+  try {
+    if (/\.pdf$/i.test(file.name)) {
+      const metadata = await requestPdf(file, '?metadata=1');
+      state.rulePdf = { file, fileName: file.name, pageCount: metadata.pageCount };
+      state.ruleWorkbook = null;
+      state.ruleAttachment = null;
+      state.ruleCacheId = null;
+      state.ruleError = '请读取 PDF 页码范围后再开始评估';
+      $('#rulePdfPages').value = '';
+      saveSettings();
+      renderRuleFile();
+      if (metadata.pageCount <= 30) await readPdfSelection();
+      else state.ruleError = `PDF 共 ${metadata.pageCount} 页，请填写不超过 30 页的范围并点击「读取选中页」`;
+      renderRulePreview();
+      toast(state.ruleError || 'PDF 规则已读取，请确认页面预览', Boolean(state.ruleError));
+      return;
+    }
+    const response = await apiFetch('/api/rules/excel', { method: 'POST', headers: { 'x-file-name': encodeURIComponent(file.name) }, body: await file.arrayBuffer() });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || '规则文件读取失败，请确认本地服务已更新');
+    if (!payload.sheets?.length) throw new Error('规则文件中没有可读取的文字或内嵌图片');
+    state.ruleWorkbook = { fileName: file.name, sheets: payload.sheets };
+    state.rulePdf = null;
+    state.ruleError = '';
+    state.ruleAttachment = null;
+    renderRuleFile();
+    toast(state.ruleError || '已读取规则，请确认工作表、范围和预览内容', Boolean(state.ruleError));
+  } catch (error) {
+    if (state.rulePdf) { state.ruleError = error.message; renderRulePreview(); }
+    $('#ruleFileName').textContent = state.rulePdf?.fileName || state.ruleWorkbook?.fileName || state.ruleAttachment?.fileName || '尚未添加规则文件';
+    toast(error.message, true);
+  } finally {
+    setRulesUploading(false);
+    $('#ruleFileInput').value = '';
+  }
+}
+
+async function removeRuleFile() {
+  if (state.running || state.rulesUploading || state.rulesSaving) return toast('请等待当前操作结束后再移除规则', true);
+  state.ruleSaveVersion++;
+  try { await clearRuleDraft(); } catch (error) { toast(error.message, true); }
+  state.ruleAttachment = null;
+  state.ruleCacheId = null;
+  state.ruleWorkbook = null;
+  state.rulePdf = null;
+  state.ruleError = '';
+  renderRuleFile();
+  saveSettings();
 }
 
 function updateProvider(overwrite = true) {
@@ -286,6 +487,8 @@ async function checkServiceHealth() {
     const payload = await response.json();
     if (!response.ok || !payload.ok) throw new Error('服务检查失败');
     state.backendWebSearch = payload.capabilities?.webSearch === true;
+    state.backendRuleImages = payload.capabilities?.ruleImages === true;
+    state.backendDatasetImages = payload.capabilities?.datasetImages === true;
     status.className = `service${state.backendWebSearch ? '' : ' warning'}`;
     status.querySelector('span').textContent = state.backendWebSearch
       ? `服务已连接 · API v${payload.apiVersion || 1}`
@@ -293,6 +496,7 @@ async function checkServiceHealth() {
     updateModelControls();
     return payload;
   } catch {
+    state.backendRuleImages = false;
     state.backendWebSearch = false;
     status.className = 'service error';
     status.querySelector('span').textContent = '服务未连接';
@@ -302,11 +506,15 @@ async function checkServiceHealth() {
 }
 
 async function uploadFile(file) {
+  if (state.running) return toast('请等待当前评估结束后再更换评估文件', true);
+  if (state.datasetUploading) return toast('评估文件正在上传或解析，请等待完成', true);
   if (!file || !/\.xlsx$/i.test(file.name)) return toast('请选择 .xlsx 文件', true);
-  if (file.size > 100 * 1024 * 1024) return toast('文件不能超过 100 MB', true);
-  $('#dropzone strong').textContent = '正在解析 Excel…';
+  if (file.size > MAX_DATASET_UPLOAD_BYTES) return toast('评估文件不能超过 300 MB', true);
+  state.datasetUploading = true;
+  $('#fileInput').disabled = true;
+  $('#dropzone strong').textContent = '正在上传并解析 Excel，大文件请耐心等待…';
   try {
-    const response = await apiFetch('/api/excel', { method: 'POST', headers: { 'x-file-name': encodeURIComponent(file.name) }, body: await file.arrayBuffer() });
+    const response = await apiFetch('/api/excel', { method: 'POST', headers: { 'x-file-name': encodeURIComponent(file.name) }, body: file });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || '解析失败');
     if (!payload.sheets?.some(sheet => sheet.rows.length)) throw new Error('Excel 中没有可读取的数据');
@@ -325,6 +533,9 @@ async function uploadFile(file) {
   } catch (error) {
     toast(error.message, true);
     $('#dropzone strong').textContent = '拖拽 Excel 到这里，或点击选择';
+  } finally {
+    state.datasetUploading = false;
+    $('#fileInput').disabled = false;
   }
 }
 
@@ -332,6 +543,10 @@ function selectSheet() {
   state.sheet = state.workbook[Number($('#sheetSelect').value)];
   state.rows = state.sheet.rows;
   state.columns = state.sheet.columns;
+  state.imageColumns = [...new Set((state.sheet.images || []).map(image => image.columnName))];
+  $('#datasetImageOptions').classList.toggle('hidden', !state.imageColumns.length && !state.sheet.imageWarnings?.length);
+  $('#imageColumnOptions').innerHTML = state.imageColumns.map(column => `<label><input type="checkbox" data-image-column="${escapeHtml(column)}" checked>${escapeHtml(column)}（${state.sheet.images.filter(image => image.columnName === column).length} 张）</label>`).join('');
+  $('#datasetImageWarnings').textContent = (state.sheet.imageWarnings || []).join(' ');
   const options = state.columns.map(column => `<option value="${escapeHtml(column)}">${escapeHtml(column)}</option>`).join('');
   $('#queryColumn').innerHTML = options;
   $('#answerColumn').innerHTML = options;
@@ -363,7 +578,14 @@ function updatePreview({ commitRange = false } = {}) {
     ? `将评估 ${range.rows.length} 条数据（第 ${range.start}–${range.end} 条）`
     : '当前范围没有可评估数据';
   $('#extraVariables').innerHTML = state.columns.filter(column => ![queryColumn, answerColumn].includes(column)).slice(0, 5).map(column => `<code>{{${escapeHtml(column)}}}</code>`).join('');
-  $('#dataPreview').innerHTML = `<thead><tr><th>#</th><th>${escapeHtml(queryColumn || '问题')}</th><th>${escapeHtml(answerColumn || '回答')}</th></tr></thead><tbody>${range.rows.slice(0, 8).map((row, index) => `<tr><td>${range.start + index}</td><td><div class="cell-clamp">${escapeHtml(row[queryColumn])}</div></td><td><div class="cell-clamp">${escapeHtml(row[answerColumn])}</div></td></tr>`).join('')}</tbody>`;
+  const hasImages = Boolean(state.sheet?.images?.length);
+  $('#dataPreview').innerHTML = `<thead><tr><th>#</th><th>${escapeHtml(queryColumn || '问题')}</th><th>${escapeHtml(answerColumn || '回答')}</th>${hasImages ? '<th>本条待评图片</th>' : ''}</tr></thead><tbody>${range.rows.slice(0, 8).map((row, index) => {
+    const excelRow = state.sheet.rowNumbers[range.start - 1 + index];
+    const images = caseImagesForRow(state.sheet.images, excelRow, state.imageColumns);
+    return `<tr><td>${range.start + index}<small class="dataset-image-count">Excel ${excelRow} 行</small></td><td><div class="cell-clamp">${escapeHtml(row[queryColumn])}</div>${datasetImagesHtml(images.filter(image => image.columnName === queryColumn), true)}</td><td><div class="cell-clamp">${escapeHtml(row[answerColumn])}</div>${datasetImagesHtml(images.filter(image => image.columnName === answerColumn), true)}</td>${hasImages ? `<td>${datasetImagesHtml(images, true) || '本行没有选中图片'}</td>` : ''}</tr>`;
+  }).join('')}</tbody>`;
+  hydrateDatasetImages($('#dataPreview'));
+  $('#datasetImageSummary').textContent = `选中 ${state.imageColumns.length} 个图片列。图片按左上角单元格及 Excel 真实行号归属；每条最多 30 张、合计 20 MB。`;
   $('#runButton').disabled = !range.rows.length || !queryColumn || !answerColumn || state.running;
   document.querySelectorAll('.step')[1].classList.add('active');
 }
@@ -401,12 +623,15 @@ function applyRangePreset(preset) {
 }
 
 function removeFile() {
+  if (state.running || state.datasetUploading) return toast('请等待当前评估或上传结束后再移除文件', true);
   Object.assign(state, { workbook: null, sheet: null, rows: [], columns: [], results: [], fileName: '', uploadId: null, lastRunId: null, lastRunConfig: null, promptMappings: {} });
   $('#fileInput').value = '';
   $('#datasetCard').classList.add('hidden');
   $('#dropzone').classList.remove('hidden');
   $('#dropzone strong').textContent = '拖拽 Excel 到这里，或点击选择';
   $('#runButton').disabled = true;
+  state.imageColumns = [];
+  $('#datasetImageOptions').classList.add('hidden');
   renderPromptMappings();
 }
 
@@ -417,11 +642,12 @@ function settings() {
   return {
     apiKey: $('#apiKey').value.trim(), endpoint: $('#endpoint').value.trim(), model: $('#model').value.trim(),
     systemPrompt: $('#systemPrompt').value, userTemplate: $('#userPrompt').value,
+    ruleAttachment: state.ruleAttachment,
     provider, temperature: $('#temperature').value,
     reasoningEffort: $('#reasoningEffort').value, scorePath: $('#scorePath').value.trim(),
     webSearchMode: provider === 'openai' ? $('#webSearchMode').value : 'off',
     retryCount: Number($('#retryCount').value), concurrency: Number($('#concurrency').value), queryColumn, answerColumn,
-    promptMappings: { ...state.promptMappings }
+    promptMappings: { ...state.promptMappings }, imageColumns: [...state.imageColumns]
   };
 }
 
@@ -458,7 +684,9 @@ function fillTemplate(template, data) {
 
 async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
   const start = performance.now();
-  const normalized = buildPromptData(row, config);
+  const caseImages = caseImagesForRow(state.sheet.images, excelRowNumber, config.imageColumns);
+  const normalized = buildPromptData(datasetPromptRow(row, caseImages), config);
+  const caseInput = caseImages.length ? { uploadId: state.uploadId, sheetName: state.sheet.name, excelRowNumber, imageColumns: config.imageColumns, imageIds: caseImages.map(image => image.id) } : undefined;
   const maxRetries = Math.max(0, Number(config.retryCount) || 0);
   let attempts = 0;
   while (attempts <= maxRetries) {
@@ -471,7 +699,7 @@ async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
     try {
       const response = await apiFetch('/api/evaluate', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...config, userPrompt: fillTemplate(config.userTemplate, normalized) }),
+        body: JSON.stringify({ ...config, caseInput, userPrompt: fillTemplate(config.userTemplate, normalized) }),
         signal: controller.signal
       });
       const payload = await response.json().catch(() => ({}));
@@ -481,7 +709,7 @@ async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
         throw error;
       }
       const score = numericScore(payload.output, config.scorePath);
-      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, rawOutput: payload.rawText || '', webSearch: payload.webSearch, attempts, elapsed: performance.now() - start };
+      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, caseImages: payload.caseImages || [], imageProcessing: payload.imageProcessing, status: 'success', score, displayOutput: outputText(payload.output), output: payload.output, rawOutput: payload.rawText || '', webSearch: payload.webSearch, attempts, elapsed: performance.now() - start };
     } catch (error) {
       if (controller.signal.aborted && state.stopRequested) {
         return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'cancelled', score: null, displayOutput: '用户已中断评估', output: null, attempts, elapsed: performance.now() - start };
@@ -490,7 +718,7 @@ async function evaluateOne(row, position, sourceIndex, excelRowNumber, config) {
         await waitForRetryOrStop(retryDelay(attempts));
         continue;
       }
-      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, status: 'error', score: null, displayOutput: error.message, output: null, attempts, elapsed: performance.now() - start };
+      return { position, rowNumber: sourceIndex + 1, excelRowNumber, sourceRow: row, query: normalized.query, answer: normalized.answer, caseImages, imagesNotSent: true, status: 'error', score: null, displayOutput: error.message, output: null, attempts, elapsed: performance.now() - start };
     } finally {
       state.activeControllers.delete(controller);
     }
@@ -571,7 +799,19 @@ async function persistCurrentRun(config, range, wasStopped) {
 
 async function runEvaluation() {
   if (state.running) return;
+  if (state.datasetUploading) return toast('评估文件正在上传或解析，请等待完成', true);
+  if (state.rulesLoading || state.rulesSaving) return toast('评审规则图片正在读取或保存，请稍候', true);
+  if (state.rulesUploading) return toast('评审规则正在上传，请等待解析完成', true);
+  if (state.ruleError) return toast(`请先调整评审规则：${state.ruleError}`, true);
   const config = settings();
+  if (state.sheet?.images?.length && config.imageColumns.length) {
+    await checkServiceHealth();
+    if (!state.backendDatasetImages) return toast('后台尚未支持数据集图片，请更新本地服务后重新上传 Excel', true);
+  }
+  if (config.ruleAttachment?.images?.length) {
+    await checkServiceHealth();
+    if (!state.backendRuleImages) return toast('后台尚未支持规则图片，请更新或重启本地服务后重试', true);
+  }
   if (!config.apiKey) return toast('请先填写 API Key', true);
   if (!config.endpoint || !config.model) return toast('请填写 API 地址和模型名称', true);
   if (!config.systemPrompt.trim() || !config.userTemplate.trim()) return toast('System Prompt 和 User Prompt 不能为空', true);
@@ -587,9 +827,13 @@ async function runEvaluation() {
   const range = selectedRange();
   const targetRows = range.rows;
   if (!targetRows.length) return toast('请选择有效的数据范围', true);
+  const selectedExcelRows = new Set(state.sheet.rowNumbers.slice(range.start - 1, range.end));
+  const brokenImage = (state.sheet.images || []).find(image => selectedExcelRows.has(image.excelRowNumber) && config.imageColumns.includes(image.columnName) && image.error);
+  if (brokenImage) return toast(brokenImage.error, true);
 
   saveSettings();
   state.running = true;
+  document.querySelectorAll('#dataSection input, #dataSection select, #dataSection button').forEach(input => { input.disabled = true; });
   state.paused = false;
   state.stopRequested = false;
   state.activeControllers.clear();
@@ -630,6 +874,7 @@ async function runEvaluation() {
   const saveOutcome = await persistCurrentRun(config, range, wasStopped);
   if (saveOutcome?.run?.id) state.lastRunId = saveOutcome.run.id;
   state.running = false;
+  document.querySelectorAll('#dataSection input, #dataSection select, #dataSection button').forEach(input => { input.disabled = false; });
   state.paused = false;
   state.stopRequested = false;
   releasePausedWorkers();
@@ -684,6 +929,13 @@ function renderResults() {
     || complete.some(item => item.webSearch?.used);
   $('#resultCount').textContent = `${filtered.length} 条结果`;
   $('#resultTable').innerHTML = `<thead><tr><th>#</th><th>问题</th><th>回答</th><th>状态</th>${outputColumns.map(column => `<th>${escapeHtml(column.label)}</th>`).join('')}${showWebSearch ? '<th>联网搜索</th>' : ''}<th>请求</th><th>耗时</th><th></th></tr></thead><tbody>${filtered.map(item => `<tr><td>${item.rowNumber}</td><td><div class="cell-clamp">${escapeHtml(item.query)}</div></td><td><div class="cell-clamp">${escapeHtml(item.answer)}</div></td><td><span class="status ${item.status}">${item.status === 'success' ? '● 完成' : item.status === 'cancelled' ? '— 已中断' : '× 接口错误'}</span></td>${outputColumns.map(column => `<td><div class="cell-clamp">${escapeHtml(outputCellValue(item.output, column.key, item.displayOutput))}</div></td>`).join('')}${showWebSearch ? `<td><span class="search-result-status${item.webSearch?.used ? ' used' : ''}">${escapeHtml(webSearchResultLabel(item))}</span></td>` : ''}<td>${item.attempts || 0}${item.attempts > 1 ? `（重试 ${item.attempts - 1}）` : ''}</td><td>${(item.elapsed / 1000).toFixed(1)}s</td><td><button class="detail-button" data-index="${item.position}">详情</button></td></tr>`).join('')}</tbody>`;
+  [...$('#resultTable').querySelectorAll('tbody tr')].forEach((row, index) => {
+    const count = filtered[index]?.caseImages?.length || 0;
+    if (!count) return;
+    const badge = document.createElement('small');
+    badge.className = 'dataset-image-count'; badge.textContent = `${count} 张待评图片 · 详情中查看`;
+    row.cells[2].append(badge);
+  });
 }
 
 function showDetail(index) {
@@ -695,10 +947,10 @@ function showDetail(index) {
     [config.answerColumn || 'answer']: item.answer
   };
   const sourceRow = item.sourceRow && Object.keys(item.sourceRow).length ? item.sourceRow : fallbackRow;
-  const promptData = buildPromptData(sourceRow, config);
+  const promptData = buildPromptData(datasetPromptRow(sourceRow, item.caseImages || []), config);
   const renderedUserPrompt = fillTemplate(config.userTemplate || '', promptData);
   const output = formatDetailOutput(item.output, item.displayOutput);
-  const systemPrompt = String(config.systemPrompt || '');
+  const systemPrompt = composeJudgeSystemPrompt(config.systemPrompt, config.ruleAttachment);
   state.detailCopy = {
     system: systemPrompt,
     user: renderedUserPrompt,
@@ -721,6 +973,7 @@ function showDetail(index) {
       <div class="detail-system-body">
         <div class="detail-block-heading"><span>完整 System Prompt</span><button class="copy-button" type="button" data-copy-detail="system">复制 System Prompt</button></div>
         <pre>${escapeHtml(systemPrompt)}</pre>
+        ${config.ruleAttachment?.images?.length ? `<p class="field-help">以下 ${config.ruleAttachment.images.length} 张图片以独立视觉消息随本条评估发送，作为规则配图。</p><div class="rule-image-gallery">${ruleImagesHtml(config.ruleAttachment.images, item.imageProcessing?.ruleImages)}</div>` : ''}
       </div>
     </details>
     <div class="detail-actions"><button class="copy-button copy-all" type="button" data-copy-detail="all">复制 User Prompt 与输出</button></div>
@@ -728,6 +981,7 @@ function showDetail(index) {
       <section class="detail-block detail-full-block">
         <div class="detail-block-heading"><span>完整 User Prompt</span><button class="copy-button" type="button" data-copy-detail="user">复制 User Prompt</button></div>
         <pre>${escapeHtml(renderedUserPrompt)}</pre>
+        ${item.caseImages?.length ? `<p class="field-help">本条待评图片 ${item.caseImages.length} 张${item.status === 'success' ? '，已随本条请求发送' : '（本条请求未成功完成）'}，不是评审规则图片。</p>${datasetImagesHtml(item.caseImages)}` : ''}
       </section>
       <section class="detail-block detail-full-block">
         <div class="detail-block-heading"><span>完整模型输出</span><button class="copy-button" type="button" data-copy-detail="output">复制输出</button></div>
@@ -740,6 +994,7 @@ function showDetail(index) {
       <pre>${escapeHtml(sourceFields)}</pre>
     </details>`;
   $('#detailDialog').showModal();
+  hydrateDatasetImages($('#detailContent'));
 }
 
 async function copyText(text) {
@@ -907,6 +1162,19 @@ $('#userPrompt').addEventListener('input', renderPromptMappings);
 $('#apiKey').addEventListener('input', saveSettings);
 $('#toggleKey').addEventListener('click', () => { const hidden = $('#apiKey').type === 'password'; $('#apiKey').type = hidden ? 'text' : 'password'; $('#toggleKey').textContent = hidden ? '隐藏' : '显示'; });
 $('#fileInput').addEventListener('change', event => uploadFile(event.target.files[0]));
+$('#imageColumnOptions').addEventListener('change', () => {
+  state.imageColumns = [...$('#imageColumnOptions').querySelectorAll('input:checked')].map(input => input.dataset.imageColumn);
+  updatePreview();
+});
+$('#ruleFileInput').addEventListener('change', event => uploadRuleFile(event.target.files[0]));
+$('#removeRuleFile').addEventListener('click', removeRuleFile);
+$('#ruleSheetOptions').addEventListener('input', updateRulePreview);
+$('#applyRulePdfPages').addEventListener('click', applyPdfPages);
+$('#rulePdfPages').addEventListener('input', () => {
+  if (!state.rulePdf) return;
+  state.ruleError = '页码已修改，请点击「读取选中页」应用后再开始评估';
+  renderRulePreview();
+});
 $('#dropzone').addEventListener('dragover', event => { event.preventDefault(); $('#dropzone').classList.add('dragging'); });
 $('#dropzone').addEventListener('dragleave', () => $('#dropzone').classList.remove('dragging'));
 $('#dropzone').addEventListener('drop', event => { event.preventDefault(); $('#dropzone').classList.remove('dragging'); uploadFile(event.dataTransfer.files[0]); });
@@ -964,7 +1232,11 @@ document.querySelectorAll('[data-help]').forEach(button => button.addEventListen
   $('#helpPopover').classList.remove('hidden');
 }));
 $('#closeHelp').addEventListener('click', () => $('#helpPopover').classList.add('hidden'));
-$('#resetButton').addEventListener('click', () => { localStorage.removeItem('judge-studio-settings'); sessionStorage.removeItem('judge-studio-api-key'); location.reload(); });
+$('#resetButton').addEventListener('click', async () => {
+  if (state.rulesUploading || state.rulesSaving) return toast('请等待规则保存完成后再重置', true);
+  try { await clearRuleDraft(); } catch (error) { return toast(error.message, true); }
+  localStorage.removeItem('judge-studio-settings'); sessionStorage.removeItem('judge-studio-api-key'); location.reload();
+});
 
 loadSettings();
 checkServiceHealth();

@@ -5,12 +5,18 @@ import { fileURLToPath } from 'node:url';
 import ExcelJS from 'exceljs';
 import { callJudge } from './lib/evaluator.js';
 import { parseWorksheet } from './lib/excel.js';
+import { parseRuleWorksheet } from './lib/rule-excel.js';
+import { composeJudgeSystemPrompt } from './public/rule-attachment.js';
+import { parsePdfRules } from './lib/rule-pdf.js';
 import { applicationOwnsCors } from './lib/cors.js';
-import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, saveRun, saveUpload } from './lib/storage-runtime.js';
+import { readBody } from './lib/request-body.js';
+import { MAX_DATASET_UPLOAD_BYTES, MAX_RULE_UPLOAD_BYTES } from './public/upload-limits.js';
+import { extractDatasetImages } from './lib/dataset-images.js';
+import { resolveCaseImages } from './lib/case-images.js';
+import { deleteRun, listRuns, readRunArtifact, readUploadArtifact, readUploadImage, saveRun, saveUpload } from './lib/storage-runtime.js';
 
 const root = fileURLToPath(new URL('./public/', import.meta.url));
 const port = Number(process.env.PORT || 3077);
-const maxBody = 100 * 1024 * 1024;
 const apiVersion = 2;
 const startedAt = new Date().toISOString();
 
@@ -40,24 +46,6 @@ function download(res, { content, contentType, fileName }) {
   res.end(content);
 }
 
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    req.on('data', chunk => {
-      size += chunk.length;
-      if (size > maxBody) {
-        reject(new Error('文件不能超过 100 MB'));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
-}
-
 async function handleApi(req, res) {
   const url = new URL(req.url || '/', 'http://localhost');
   const pathname = url.pathname;
@@ -68,21 +56,51 @@ async function handleApi(req, res) {
       apiVersion,
       startedAt,
       pid: process.pid,
-      capabilities: { webSearch: true }
+      capabilities: { webSearch: true, ruleExcel: true, ruleImages: true, rulePdf: true, datasetImages: true, imageResizing: true },
+      uploadLimits: { datasetBytes: MAX_DATASET_UPLOAD_BYTES, ruleBytes: MAX_RULE_UPLOAD_BYTES }
     });
   }
 
   if (req.method === 'POST' && pathname === '/api/excel') {
-    const buffer = await readBody(req);
+    const buffer = await readBody(req, MAX_DATASET_UPLOAD_BYTES);
     if (!buffer.length) return json(res, 400, { error: '请选择 Excel 文件' });
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
-    const sheets = workbook.worksheets.map(parseWorksheet);
+    const assets = [];
+    const sheets = workbook.worksheets.map(worksheet => {
+      const extracted = extractDatasetImages(worksheet);
+      const sheet = parseWorksheet(worksheet, extracted);
+      assets.push(...extracted.images.map(image => ({ ...image, columnName: sheet.columns[image.columnNumber - 1] })));
+      return sheet;
+    });
     if (!sheets.some(sheet => sheet.rows.length)) return json(res, 400, { error: 'Excel 中没有可读取的数据' });
     let originalName = '评估数据集.xlsx';
     try { originalName = decodeURIComponent(req.headers['x-file-name'] || originalName); } catch {}
-    const upload = await saveUpload({ buffer, originalName });
+    const upload = await saveUpload({ buffer, originalName, images: assets });
+    for (const sheet of sheets) {
+      if (sheet.images) sheet.images = sheet.images.map(image => ({ ...image, uploadId: upload.id }));
+    }
     return json(res, 200, { sheets, upload });
+  }
+
+  if (req.method === 'POST' && pathname === '/api/rules/excel') {
+    const buffer = await readBody(req);
+    if (!buffer.length) return json(res, 400, { error: '请选择 Excel 评审规则文件' });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const sheets = workbook.worksheets.map(parseRuleWorksheet).filter(sheet => sheet.rows.length || sheet.images.length);
+    if (!sheets.length) return json(res, 400, { error: '规则文件中没有可读取的单元格文字或内嵌图片' });
+    const characters = sheets.reduce((sum, sheet) => sum + sheet.rows.reduce((total, row) => total + row.cells.reduce((count, cell) => count + cell.value.length, 0), 0), 0);
+    if (characters > 2000000) return json(res, 400, { error: '规则文件超过 200 万字符，请删减后上传' });
+    const imageBytes = sheets.reduce((sum, sheet) => sum + sheet.images.reduce((total, image) => total + (image.size || 0), 0), 0);
+    if (imageBytes > 40 * 1024 * 1024) return json(res, 400, { error: '规则文件内嵌图片总大小超过 40 MB，请压缩或拆分 Excel 后上传' });
+    return json(res, 200, { sheets });
+  }
+
+  if (req.method === 'POST' && pathname === '/api/rules/pdf') {
+    return json(res, 200, await parsePdfRules(await readBody(req), {
+      metadataOnly: url.searchParams.get('metadata') === '1', pageRange: url.searchParams.get('pages') || ''
+    }));
   }
 
   if (req.method === 'POST' && pathname === '/api/evaluate') {
@@ -91,8 +109,10 @@ async function handleApi(req, res) {
     res.on('close', () => {
       if (!res.writableEnded) controller.abort(new Error('客户端已中断请求'));
     });
-    const result = await callJudge(body, fetch, controller.signal);
-    return json(res, 200, result);
+    const caseImages = await resolveCaseImages(body.caseInput);
+    if (controller.signal.aborted) throw new Error('客户端已中断请求');
+    const result = await callJudge({ ...body, caseImages, ruleImages: body.ruleAttachment?.images || [], systemPrompt: composeJudgeSystemPrompt(body.systemPrompt, body.ruleAttachment) }, fetch, controller.signal);
+    return json(res, 200, { ...result, caseImages: caseImages.map(({ dataUrl, ...image }, index) => ({ ...image, modelImage: result.imageProcessing.caseImages[index] })) });
   }
 
   if (req.method === 'GET' && pathname === '/api/runs') {
@@ -119,6 +139,15 @@ async function handleApi(req, res) {
   const uploadDownload = pathname.match(/^\/api\/uploads\/([0-9a-f-]{36})\/download$/i);
   if (req.method === 'GET' && uploadDownload) {
     return download(res, await readUploadArtifact(uploadDownload[1]));
+  }
+
+  const uploadImage = pathname.match(/^\/api\/uploads\/([0-9a-f-]{36})\/images\/([a-zA-Z0-9-]{1,80})$/i);
+  if (req.method === 'GET' && uploadImage) {
+    const image = await readUploadImage(uploadImage[1], uploadImage[2]);
+    res.writeHead(200, { 'content-type': image.contentType, 'content-length': image.content.length,
+      'cache-control': 'private, max-age=3600', 'x-content-type-options': 'nosniff' });
+    res.end(image.content);
+    return;
   }
 
   return false;
@@ -158,6 +187,7 @@ const server = http.createServer(async (req, res) => {
     if (res.destroyed || res.writableEnded) return;
     const connectionFailure = /fetch failed|timeout|timed out|econnreset|connection reset|upstream connect|disconnect|connection termination/i.test(error?.message || '');
     const status = error?.code === 'ENOENT' ? 404 : Number(error?.status) || (connectionFailure ? 502 : 400);
+    if (status === 413) res.setHeader('connection', 'close');
     if (req.url?.startsWith('/api/')) json(res, status, { error: error.message || '请求失败' });
     else {
       res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8' });

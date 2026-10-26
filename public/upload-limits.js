@@ -1,0 +1,3 @@
+export const MAX_DATASET_UPLOAD_BYTES = 300 * 1024 * 1024;
+export const MAX_RULE_UPLOAD_BYTES = 100 * 1024 * 1024;
+export const MAX_API_BODY_BYTES = 100 * 1024 * 1024;

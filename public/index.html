@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
   <title>Judge Studio · 自动评估工作台</title>
-  <link rel="stylesheet" href="./styles.css?v=20260910-detail-layout">
+  <link rel="stylesheet" href="./styles.css?v=20261024-rule-pdf">
+  <link rel="stylesheet" href="./dataset-images.css?v=20261025">
 </head>
 <body>
   <div class="shell">
@@ -47,6 +48,34 @@
               <div><span>输出变量</span><small>对象子字段自动展开，数组作为一个字段合并保留</small></div>
               <div class="output-chips" id="outputVariables"><code>自由文本 / 任意结构</code></div>
             </div>
+          </div>
+          <div class="field span-2 rule-upload-card">
+            <div class="label-row"><label for="ruleFileInput">评审规则文件（可选）</label><span>供每条评估共用，与待评数据集分开</span></div>
+            <p class="field-help">支持 Excel 和 PDF，最大 100 MB。Excel 可选择工作表和范围；PDF 可选择页码，文字和页面图像会随每条评估发送。</p>
+            <div class="rule-file-actions">
+              <label class="secondary-button rule-file-label" for="ruleFileInput">上传规则文件</label>
+              <input id="ruleFileInput" type="file" accept=".xlsx,.pdf" hidden>
+              <span id="ruleFileName" aria-live="polite">尚未添加规则文件</span>
+              <button class="ghost-button hidden" id="removeRuleFile" type="button">移除规则</button>
+            </div>
+            <div id="ruleSheetOptions" class="rule-sheet-options"></div>
+            <div id="rulePdfOptions" class="hidden">
+              <div class="rule-file-actions">
+                <label for="rulePdfPages">PDF 页码</label>
+                <input id="rulePdfPages" type="text" placeholder="全部，或 1-3,5" aria-describedby="rulePdfInfo">
+                <button id="applyRulePdfPages" class="secondary-button" type="button">读取选中页</button>
+              </div>
+              <p id="rulePdfInfo" class="field-help"></p>
+            </div>
+            <p class="rule-notice hidden" id="ruleWarning" role="status"></p>
+            <p class="rule-error hidden" id="ruleError" role="alert"></p>
+            <details class="rule-preview hidden" id="rulePreview">
+              <summary id="rulePreviewSummary">预览发送给模型的规则</summary>
+              <pre id="rulePreviewText"></pre>
+              <p class="field-help hidden" id="ruleImageHelp">这些图片会作为评审规则随每条数据发送。请选择支持图片输入的模型，API 代理也需支持图片透传。选中图片最多 30 张、合计 20 MB。超过 8000 像素的长边会在发送前整图等比例缩小，原图不变。</p>
+              <div id="rulePreviewImages" class="rule-image-gallery"></div>
+            </details>
+            <small class="field-help">Excel 保留首行、合并单元格和内嵌图片，公式读取已保存的结果。PDF 同时提取文字并渲染选中页面，保留表格与插图；扫描件需视觉模型识别。每次最多 30 张图片或 PDF 页面，合计 20 MB，不自动截断。</small>
           </div>
           <div class="field span-2">
             <div class="label-row"><label for="userPrompt">User Prompt 模板</label><span>支持 Excel 列名变量</span></div>
@@ -115,7 +144,7 @@
       <section class="panel" id="dataSection">
         <div class="section-heading">
           <div><span class="section-number">02</span><h2>上传评估文件</h2></div>
-          <p>支持 .xlsx，首行为列名，单个文件最大 100 MB。</p>
+          <p>支持 .xlsx，首行为列名，可读取普通内嵌图片；单个文件最大 300 MB。大文件解析可能较慢，请勿重复上传。</p>
         </div>
         <label class="dropzone" id="dropzone" for="fileInput">
           <input id="fileInput" type="file" accept=".xlsx" hidden>
@@ -142,6 +171,13 @@
             </div>
             <div class="variable-mapping-list" id="promptMappings"></div>
             <p class="mapping-warning hidden" id="mappingWarning"></p>
+          </div>
+          <div id="datasetImageOptions" class="dataset-image-options hidden">
+            <strong>待评图片列</strong>
+            <p>勾选的列会随对应行一起发给模型，与评审规则图片分开。默认选择全部图片列；请使用支持视觉输入的模型和 API 代理。超长图片发送前会整图等比例缩至长边 8000 像素，不裁剪、不切片，原图保留。</p>
+            <div id="imageColumnOptions"></div>
+            <p id="datasetImageSummary"></p>
+            <p id="datasetImageWarnings" class="dataset-picture-error"></p>
           </div>
           <div class="range-card">
             <div class="range-copy">
@@ -213,6 +249,6 @@
   <div class="toast" id="toast" role="status"></div>
   <div class="help-popover hidden" id="helpPopover" role="dialog"><button type="button" id="closeHelp">×</button><h3 id="helpTitle"></h3><p id="helpText"></p></div>
   <dialog id="detailDialog"><button class="dialog-close" id="closeDialog" type="button" aria-label="关闭详情">×</button><span class="eyebrow">EVALUATION DETAIL</span><h2>单条评估详情</h2><div id="detailContent"></div></dialog>
-  <script type="module" src="./app.js?v=20261009-upload-100mb"></script>
+  <script type="module" src="./app.js?v=20261025-dataset-images"></script>
 </body>
 </html>

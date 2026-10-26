@@ -79,7 +79,7 @@ export function deriveOutputColumns(results = [], preferredColumns = []) {
   return columns;
 }
 
-export function buildExportSchema(inputColumns = [], outputColumns = [], { includeWebSearch = false } = {}) {
+export function buildExportSchema(inputColumns = [], outputColumns = [], { includeWebSearch = false, includeCaseImages = false } = {}) {
   const sourceColumns = [...new Set((Array.isArray(inputColumns) ? inputColumns : []).map(String))];
   const used = new Set(sourceColumns);
   const rowNumber = uniqueLabel('数据序号', used);
@@ -96,7 +96,8 @@ export function buildExportSchema(inputColumns = [], outputColumns = [], { inclu
   } : null;
   const attempts = uniqueLabel('请求次数', used);
   const elapsed = uniqueLabel('耗时(ms)', used);
-  return { inputColumns: sourceColumns, outputs, webSearch, labels: { rowNumber, excelRowNumber, status, attempts, elapsed } };
+  const caseImages = includeCaseImages ? uniqueLabel('待评图片来源', used) : null;
+  return { inputColumns: sourceColumns, outputs, webSearch, caseImages, labels: { rowNumber, excelRowNumber, status, attempts, elapsed } };
 }
 
 export function outputCellValue(output, key, fallback = '') {
@@ -120,7 +121,7 @@ export function buildExportRows(results, outputColumns, inputColumns = [], confi
   const resultItems = Array.isArray(results) ? results : [];
   const includeWebSearch = config.webSearchMode && config.webSearchMode !== 'off'
     || resultItems.some(item => item.webSearch?.used);
-  const schema = buildExportSchema(inputColumns, outputColumns, { includeWebSearch });
+  const schema = buildExportSchema(inputColumns, outputColumns, { includeWebSearch, includeCaseImages: resultItems.some(item => item.caseImages?.length) });
   const sourceValue = (item, column) => {
     if (item.sourceRow && Object.prototype.hasOwnProperty.call(item.sourceRow, column)) return item.sourceRow[column];
     if (column === config.queryColumn) return item.query;
@@ -142,7 +143,7 @@ export function buildExportRows(results, outputColumns, inputColumns = [], confi
     return [status, queries, sources];
   };
   const rows = [
-    [schema.labels.rowNumber, schema.labels.excelRowNumber, ...schema.inputColumns, schema.labels.status, ...schema.outputs.map(column => column.exportLabel), ...(schema.webSearch ? Object.values(schema.webSearch) : []), schema.labels.attempts, schema.labels.elapsed],
+    [schema.labels.rowNumber, schema.labels.excelRowNumber, ...schema.inputColumns, schema.labels.status, ...schema.outputs.map(column => column.exportLabel), ...(schema.webSearch ? Object.values(schema.webSearch) : []), ...(schema.caseImages ? [schema.caseImages] : []), schema.labels.attempts, schema.labels.elapsed],
     ...resultItems.map(item => [
       item.rowNumber,
       item.excelRowNumber ?? (Number.isFinite(Number(item.rowNumber)) ? Number(item.rowNumber) + 1 : ''),
@@ -150,6 +151,7 @@ export function buildExportRows(results, outputColumns, inputColumns = [], confi
       statusLabel(item.status),
       ...schema.outputs.map(column => outputCellValue(item.output, column.key, item.displayOutput)),
       ...webSearchValues(item),
+      ...(schema.caseImages ? [(item.caseImages || []).map(image => `${image.sheetName}!${image.cellAddress} · ${image.columnName} · ${image.id}`).join('\n')] : []),
       item.attempts ?? 0,
       Math.round(Number(item.elapsed) || 0)
     ])

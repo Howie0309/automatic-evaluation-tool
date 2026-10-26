@@ -1,6 +1,7 @@
 import { deriveOutputColumns, outputCellValue } from './result-export.js';
 import { buildScoreMetrics, numericValue, paginate, valueAtPath } from './report-metrics.js';
 import { apiFetch, downloadApi } from './cloud-runtime.js';
+import { datasetImagesHtml, hydrateDatasetImages } from './dataset-image-view.js';
 
 const $ = selector => document.querySelector(selector);
 const state = {
@@ -228,7 +229,10 @@ function resultCard(item) {
   const summary = element('summary');
   const number = element('span', 'row-number', `#${item.rowNumber ?? '—'}`);
   const main = element('div', 'summary-main');
-  append(main, element('strong', '', item.query || '（问题为空）'), element('span', '', String(item.answer || '').replace(/\s+/g, ' ').slice(0, 180) || '（回答为空）'));
+  const imageCount = item.caseImages?.length || 0;
+  const answerSummary = String(item.answer || '').replace(/\s+/g, ' ').slice(0, 180);
+  append(main, element('strong', '', item.query || (imageCount ? '图片输入' : '（问题为空）')),
+    element('span', '', imageCount ? `${answerSummary ? answerSummary + ' · ' : ''}${imageCount} 张待评图片，展开查看` : answerSummary || '（回答为空）'));
   const [statusLabel, statusClass] = statusInfo(item.status);
   const status = element('span', `status ${statusClass}`, statusLabel);
   const badges = element('div', 'score-badges');
@@ -243,6 +247,12 @@ function resultCard(item) {
   const inputGrid = element('div', 'input-grid');
   append(inputGrid, textSection('问题', item.query, '问题'), textSection('回答', item.answer, '回答'));
   body.append(inputGrid);
+  if (item.caseImages?.length) {
+    const pictures = element('section', 'case-pictures');
+    pictures.append(element('h3', '', `本条待评图片 · ${item.caseImages.length} 张`));
+    pictures.insertAdjacentHTML('beforeend', datasetImagesHtml(item.caseImages));
+    body.append(pictures);
+  }
 
   const outputHeading = element('div', 'output-heading');
   const copyOutput = element('button', 'copy-action', '复制完整结论');
@@ -294,6 +304,7 @@ function renderResults() {
   const page = paginate(results, state.page, state.pageSize);
   state.page = page.page;
   list.replaceChildren(...page.items.map(resultCard));
+  hydrateDatasetImages(list);
   const range = page.total ? `${page.start + 1}–${page.start + page.items.length}` : '0';
   $('#visibleCount').textContent = `显示 ${range} · 共 ${page.total} 条结果`;
   $('#pageStatus').textContent = `第 ${page.page}/${page.totalPages} 页 · 共 ${page.total} 条`;
