@@ -1,5 +1,11 @@
 # Judge Studio
 
+## 统一评估工作台（本地版）
+
+双击 **启动评估工作台.command**，或运行 `npm run platform`，打开 http://127.0.0.1:3088 。统一进入自动评估、截图与视觉评估、生成式 UI 实验室，并管理项目和历史报告。
+
+使用与架构说明见 [platform/README.md](platform/README.md)。原 Judge Studio 的独立启动方式如下。
+
 一个本地运行的自动评估工作台：自定义 System/User Prompt、OpenAI 兼容模型与 API 地址，上传 Excel 后预览并批量执行评估。
 
 OpenAI 模型通过 Responses API 调用，并支持按模型配置推理强度；其他服务商继续使用 OpenAI 兼容的 Chat Completions 接口。

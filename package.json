@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "platform": "node platform/server.mjs",
+    "test:platform": "node --test platform/test/*.test.mjs",
     "dev": "node --watch server.js",
     "start": "node server.js",
     "test": "node --test"

@@ -1,0 +1,6125 @@
+{
+  "title": "ChatGPT 组件研究与本地演示",
+  "checkedAt": "2026-10-22",
+  "counts": {
+    "native": 70,
+    "nativeRegistry": 68,
+    "chartRenderers": 2,
+    "host": 313,
+    "eager": 30,
+    "lazy": 283
+  },
+  "coverage": "覆盖本次可读取的两个版本化快照；不是所有时间、所有客户端或所有用户的完整内部组件库。",
+  "sources": [
+    {
+      "id": "release-native",
+      "title": "本机 OpenAI 客户端发行包：原子渲染注册表",
+      "kind": "installed-release",
+      "release": {
+        "CFBundleShortVersionString": "26.1013.40934",
+        "CFBundleVersion": "20770",
+        "CFBundleIdentifier": "com.openai.codex"
+      },
+      "asset": "webview/assets/src-f9346ee4340a.js",
+      "sha256": "677492cb58784ffda78c94c36cdd8474269565b3aa13c25dbb6de8fbf6769238",
+      "note": "只读提取名称，未复制或执行供应商实现；不是公开 API 合同。"
+    },
+    {
+      "id": "release-charts",
+      "title": "本机发行包：图表渲染标记",
+      "kind": "installed-release",
+      "asset": "webview/assets/media-bd0563402ea7.js",
+      "sha256": "9837c3217b511b9a7dbc6580b3020affdc44ba95592cda2772a05b43b4b032c8",
+      "note": "chart / pie-chart 由渲染标记确认，与 68 项基础注册表分开计数。"
+    },
+    {
+      "id": "public-runner",
+      "title": "公开 DIL Runner：宿主组件白名单",
+      "kind": "public-primary-artifact",
+      "url": "https://cdn.platform.openai.com/assets/dil/runner-C-vppISG.js",
+      "sha256": "414cdc986295e0e883a681151f5dbcd67f2892f32a3c381a98c9f645ab885c9f",
+      "note": "该文件快照中 30 eager + 283 lazy；只证明名称出现在白名单，不证明功能开放或模型实际调用。"
+    },
+    {
+      "id": "openui-analysis",
+      "title": "OpenUI 团队的 Intelligent UI 逆向分析",
+      "kind": "third-party-analysis",
+      "url": "https://www.openui.com/blog/how-chatgpt-intelligent-ui-works",
+      "note": "第三方观察，不等于 OpenAI 正式规范。"
+    },
+    {
+      "id": "independent-analysis",
+      "title": "独立实现分析：组件体系与运行时",
+      "kind": "third-party-analysis",
+      "url": "https://github.com/Disdjj/intelligent-ui-demo/blob/main/ANALYSIS.md",
+      "note": "用于定位可读证据；未使用仓库中的个人对话抓包。"
+    },
+    {
+      "id": "official-sdk",
+      "title": "OpenAI 官方 UI 指南",
+      "kind": "official-documentation",
+      "url": "https://developers.openai.com/plugins/concepts/ui-guidelines",
+      "note": "官方 Apps SDK UI 是公开组件库，与 DIL 内部注册表不是同一份清单。"
+    }
+  ],
+  "entries": [
+    {
+      "id": "native:animate",
+      "name": "animate",
+      "label": "动画容器",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "animate",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:animate-group",
+      "name": "animate-group",
+      "label": "动画组",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "animate-group",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:animate-item",
+      "name": "animate-item",
+      "label": "动画项",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "animate-item",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:badge",
+      "name": "badge",
+      "label": "徽标",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "badge",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:blockquote",
+      "name": "blockquote",
+      "label": "引用块",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "blockquote",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:bold",
+      "name": "bold",
+      "label": "加粗",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "bold",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:box",
+      "name": "box",
+      "label": "通用容器",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "box",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:button",
+      "name": "button",
+      "label": "按钮",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "button",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:card",
+      "name": "card",
+      "label": "卡片容器",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "card",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:carousel",
+      "name": "carousel",
+      "label": "横向轮播",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "carousel",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:carousel-item",
+      "name": "carousel-item",
+      "label": "轮播项",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "carousel-item",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:carousel-media-item",
+      "name": "carousel-media-item",
+      "label": "媒体轮播项",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "carousel-media-item",
+      "scopeNote": "本地图片及文字卡映射，不含自动播放媒体。"
+    },
+    {
+      "id": "native:caption",
+      "name": "caption",
+      "label": "说明文字",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "caption",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:checkbox",
+      "name": "checkbox",
+      "label": "复选框",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "checkbox",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:code",
+      "name": "code",
+      "label": "代码片段",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "code",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:col",
+      "name": "col",
+      "label": "纵向布局",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "col",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:date-picker",
+      "name": "date-picker",
+      "label": "日期选择",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "date-picker",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:divider",
+      "name": "divider",
+      "label": "分隔线",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "divider",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:favicon",
+      "name": "favicon",
+      "label": "站点标识",
+      "layer": "native",
+      "category": "图像与媒体",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "favicon",
+      "scopeNote": "使用域名首字母标识，不自动请求外站图标。"
+    },
+    {
+      "id": "native:flow",
+      "name": "flow",
+      "label": "流程布局",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "flow",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:flow-item",
+      "name": "flow-item",
+      "label": "流程节点",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "flow-item",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:form",
+      "name": "form",
+      "label": "表单容器",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "form",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:grid",
+      "name": "grid",
+      "label": "网格布局",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "grid",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:grid-item",
+      "name": "grid-item",
+      "label": "网格单元",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "grid-item",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:html-view",
+      "name": "html-view",
+      "label": "HTML 视图",
+      "layer": "native",
+      "category": "图像与媒体",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "html-view",
+      "scopeNote": "展示 HTML 源文本，不执行任意 HTML/JavaScript。"
+    },
+    {
+      "id": "native:icon",
+      "name": "icon",
+      "label": "图标",
+      "layer": "native",
+      "category": "图像与媒体",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "icon",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:image",
+      "name": "image",
+      "label": "图片",
+      "layer": "native",
+      "category": "图像与媒体",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "image",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:input",
+      "name": "input",
+      "label": "单行输入",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "input",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:label",
+      "name": "label",
+      "label": "字段标签",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "label",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:link",
+      "name": "link",
+      "label": "链接",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "link",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:list",
+      "name": "list",
+      "label": "列表",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "list",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:list-item",
+      "name": "list-item",
+      "label": "列表项",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "list-item",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:loading",
+      "name": "loading",
+      "label": "加载状态",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "loading",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:loading-indicator",
+      "name": "loading-indicator",
+      "label": "加载指示器",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "loading-indicator",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:lottie",
+      "name": "lottie",
+      "label": "Lottie 动画",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "lottie",
+      "scopeNote": "以本地 CSS 动画示意；没有捆绑 Lottie 解析器及专有动画资源。"
+    },
+    {
+      "id": "native:italic",
+      "name": "italic",
+      "label": "斜体",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "italic",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:markdown",
+      "name": "markdown",
+      "label": "Markdown 文本",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "markdown",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:math",
+      "name": "math",
+      "label": "数学表达式",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "math",
+      "scopeNote": "表达式及等式以排版文本显示；不是完整 LaTeX 引擎。"
+    },
+    {
+      "id": "native:popover",
+      "name": "popover",
+      "label": "弹出面板",
+      "layer": "native",
+      "category": "浮层与翻转",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "popover",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:popover-content",
+      "name": "popover-content",
+      "label": "弹出内容",
+      "layer": "native",
+      "category": "浮层与翻转",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "popover-content",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:popover-trigger",
+      "name": "popover-trigger",
+      "label": "弹出触发器",
+      "layer": "native",
+      "category": "浮层与翻转",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "popover-trigger",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:pulse-indicator",
+      "name": "pulse-indicator",
+      "label": "脉冲指示",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "pulse-indicator",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:pressable",
+      "name": "pressable",
+      "label": "可按压区域",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "pressable",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:radio",
+      "name": "radio",
+      "label": "单选项",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "radio",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:radio-group",
+      "name": "radio-group",
+      "label": "单选组",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "radio-group",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:row",
+      "name": "row",
+      "label": "横向布局",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "row",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:search-image",
+      "name": "search-image",
+      "label": "搜索图片",
+      "layer": "native",
+      "category": "图像与媒体",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "search-image",
+      "scopeNote": "只引用已添加的可靠本机素材；未接入 ChatGPT 图片检索服务。"
+    },
+    {
+      "id": "native:select",
+      "name": "select",
+      "label": "下拉选择",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "select",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:segmented-control",
+      "name": "segmented-control",
+      "label": "分段选择",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "segmented-control",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:shimmer-text",
+      "name": "shimmer-text",
+      "label": "流光文字",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "shimmer-text",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:slider",
+      "name": "slider",
+      "label": "滑块",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "slider",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:spacer",
+      "name": "spacer",
+      "label": "留白",
+      "layer": "native",
+      "category": "布局与容器",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "spacer",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:strikethrough",
+      "name": "strikethrough",
+      "label": "删除线",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "strikethrough",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:svg",
+      "name": "svg",
+      "label": "矢量图形",
+      "layer": "native",
+      "category": "图像与媒体",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "svg",
+      "scopeNote": "本地安全图形参数映射，不执行模型提供的原始 SVG。"
+    },
+    {
+      "id": "native:table",
+      "name": "table",
+      "label": "表格",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "table",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:table-cell",
+      "name": "table-cell",
+      "label": "表格单元",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "table-cell",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:table-row",
+      "name": "table-row",
+      "label": "表格行",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "table-row",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:table-section",
+      "name": "table-section",
+      "label": "表格分区",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "table-section",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:text",
+      "name": "text",
+      "label": "正文",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "text",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:textarea",
+      "name": "textarea",
+      "label": "多行输入",
+      "layer": "native",
+      "category": "输入与操作",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "textarea",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:title",
+      "name": "title",
+      "label": "标题",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "title",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:tooltip",
+      "name": "tooltip",
+      "label": "悬浮提示",
+      "layer": "native",
+      "category": "浮层与翻转",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "tooltip",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:transition",
+      "name": "transition",
+      "label": "过渡容器",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "transition",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:underline",
+      "name": "underline",
+      "label": "下划线",
+      "layer": "native",
+      "category": "文字与语义",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "underline",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:celebration",
+      "name": "celebration",
+      "label": "庆祝效果",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "celebration",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:flashcard-flip",
+      "name": "flashcard-flip",
+      "label": "翻转卡片",
+      "layer": "native",
+      "category": "浮层与翻转",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "flashcard-flip",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:loading-block",
+      "name": "loading-block",
+      "label": "骨架占位",
+      "layer": "native",
+      "category": "状态与动画",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "local-demo",
+      "localTag": "loading-block",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:youtube",
+      "name": "youtube",
+      "label": "视频入口",
+      "layer": "native",
+      "category": "图像与媒体",
+      "categoryEvidence": "curated",
+      "evidence": "release-registry",
+      "sourceIds": [
+        "release-native"
+      ],
+      "availability": "partial",
+      "localTag": "youtube",
+      "scopeNote": "显示用户可点击的视频入口，不自动加载第三方播放器。"
+    },
+    {
+      "id": "native:chart",
+      "name": "chart",
+      "label": "笛卡尔图表",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-render-marker",
+      "sourceIds": [
+        "release-charts"
+      ],
+      "availability": "local-demo",
+      "localTag": "chart",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "native:pie-chart",
+      "name": "pie-chart",
+      "label": "饼图",
+      "layer": "native",
+      "category": "数据展示",
+      "categoryEvidence": "curated",
+      "evidence": "release-render-marker",
+      "sourceIds": [
+        "release-charts"
+      ],
+      "availability": "local-demo",
+      "localTag": "pie-chart",
+      "scopeNote": "本地独立实现，支持演示和组合；属性为本工具适配协议，不是原版完整 DIL 属性规范。"
+    },
+    {
+      "id": "host:OpGenuiResolvedComponentBoundary",
+      "name": "OpGenuiResolvedComponentBoundary",
+      "label": "OpGenuiResolvedComponentBoundary",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AsyncImage",
+      "name": "AsyncImage",
+      "label": "AsyncImage",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AsyncImageGroup",
+      "name": "AsyncImageGroup",
+      "label": "AsyncImageGroup",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AsyncVideo",
+      "name": "AsyncVideo",
+      "label": "AsyncVideo",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AutomationPlanSummary",
+      "name": "AutomationPlanSummary",
+      "label": "AutomationPlanSummary",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Citation",
+      "name": "Citation",
+      "label": "Citation",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Cite",
+      "name": "Cite",
+      "label": "Cite",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CoTToolGroup",
+      "name": "CoTToolGroup",
+      "label": "CoTToolGroup",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CodeBlock",
+      "name": "CodeBlock",
+      "label": "CodeBlock",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CodeCite",
+      "name": "CodeCite",
+      "label": "CodeCite",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Entity",
+      "name": "Entity",
+      "label": "Entity",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FileCite",
+      "name": "FileCite",
+      "label": "FileCite",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FileNavList",
+      "name": "FileNavList",
+      "label": "FileNavList",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FlightCard",
+      "name": "FlightCard",
+      "label": "FlightCard",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FlightCarousel",
+      "name": "FlightCarousel",
+      "label": "FlightCarousel",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FlightTracker",
+      "name": "FlightTracker",
+      "label": "FlightTracker",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FollowUp",
+      "name": "FollowUp",
+      "label": "FollowUp",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FollowUpActionBar",
+      "name": "FollowUpActionBar",
+      "label": "FollowUpActionBar",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:GenImage",
+      "name": "GenImage",
+      "label": "GenImage",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningVizDil",
+      "name": "LearningVizDil",
+      "label": "LearningVizDil",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Link",
+      "name": "Link",
+      "label": "Link",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LinkCard",
+      "name": "LinkCard",
+      "label": "LinkCard",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MediaFallback",
+      "name": "MediaFallback",
+      "label": "MediaFallback",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MemoryCite",
+      "name": "MemoryCite",
+      "label": "MemoryCite",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MessageReaction",
+      "name": "MessageReaction",
+      "label": "MessageReaction",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NewsCarousel",
+      "name": "NewsCarousel",
+      "label": "NewsCarousel",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersonalityQuizWidget",
+      "name": "PersonalityQuizWidget",
+      "label": "PersonalityQuizWidget",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ProductCard",
+      "name": "ProductCard",
+      "label": "ProductCard",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:SpeechSynthesizer",
+      "name": "SpeechSynthesizer",
+      "label": "SpeechSynthesizer",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WritingBlock",
+      "name": "WritingBlock",
+      "label": "WritingBlock",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "eager",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ArtistUpcomingEventsWidget",
+      "name": "ArtistUpcomingEventsWidget",
+      "label": "ArtistUpcomingEventsWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AskUserDetails",
+      "name": "AskUserDetails",
+      "label": "AskUserDetails",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AskUserFiles",
+      "name": "AskUserFiles",
+      "label": "AskUserFiles",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AskUserLocation",
+      "name": "AskUserLocation",
+      "label": "AskUserLocation",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AskUserLocationV2",
+      "name": "AskUserLocationV2",
+      "label": "AskUserLocationV2",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AskUserLocationV2Bidi",
+      "name": "AskUserLocationV2Bidi",
+      "label": "AskUserLocationV2Bidi",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:AsyncVideoCarousel",
+      "name": "AsyncVideoCarousel",
+      "label": "AsyncVideoCarousel",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:BasketballTournamentWidget",
+      "name": "BasketballTournamentWidget",
+      "label": "BasketballTournamentWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Bento",
+      "name": "Bento",
+      "label": "Bento",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:BusinessGalleryRefWidget",
+      "name": "BusinessGalleryRefWidget",
+      "label": "BusinessGalleryRefWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:BusinessGalleryWidget",
+      "name": "BusinessGalleryWidget",
+      "label": "BusinessGalleryWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorAbcd2ScoreForTransientIschemicAttackWidget",
+      "name": "CalculatorAbcd2ScoreForTransientIschemicAttackWidget",
+      "label": "CalculatorAbcd2ScoreForTransientIschemicAttackWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorApacheIiScoreWidget",
+      "name": "CalculatorApacheIiScoreWidget",
+      "label": "CalculatorApacheIiScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorApgarScoreWidget",
+      "name": "CalculatorApgarScoreWidget",
+      "label": "CalculatorApgarScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorAsaPhysicalStatusClassificationWidget",
+      "name": "CalculatorAsaPhysicalStatusClassificationWidget",
+      "label": "CalculatorAsaPhysicalStatusClassificationWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorBilitoolWidget",
+      "name": "CalculatorBilitoolWidget",
+      "label": "CalculatorBilitoolWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorBisapScoreForPancreatitisWidget",
+      "name": "CalculatorBisapScoreForPancreatitisWidget",
+      "label": "CalculatorBisapScoreForPancreatitisWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorBishopScoreForCervicalRipeningWidget",
+      "name": "CalculatorBishopScoreForCervicalRipeningWidget",
+      "label": "CalculatorBishopScoreForCervicalRipeningWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorCanadianCtHeadRuleWidget",
+      "name": "CalculatorCanadianCtHeadRuleWidget",
+      "label": "CalculatorCanadianCtHeadRuleWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorCha2ds2VascScoreForAtrialFibrillationStrokeRiskWidget",
+      "name": "CalculatorCha2ds2VascScoreForAtrialFibrillationStrokeRiskWidget",
+      "label": "CalculatorCha2ds2VascScoreForAtrialFibrillationStrokeRiskWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorChildPughScoreForCirrhosisWidget",
+      "name": "CalculatorChildPughScoreForCirrhosisWidget",
+      "label": "CalculatorChildPughScoreForCirrhosisWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorCorrectedAdjustedAgeOfPretermInfantsWidget",
+      "name": "CalculatorCorrectedAdjustedAgeOfPretermInfantsWidget",
+      "label": "CalculatorCorrectedAdjustedAgeOfPretermInfantsWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorCurb65ScoreForPneumoniaWidget",
+      "name": "CalculatorCurb65ScoreForPneumoniaWidget",
+      "label": "CalculatorCurb65ScoreForPneumoniaWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorDukeTreadmillScoreWidget",
+      "name": "CalculatorDukeTreadmillScoreWidget",
+      "label": "CalculatorDukeTreadmillScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorFourTScoreForHeparinInducedThrombocytopeniaWidget",
+      "name": "CalculatorFourTScoreForHeparinInducedThrombocytopeniaWidget",
+      "label": "CalculatorFourTScoreForHeparinInducedThrombocytopeniaWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorGlasgowBlatchfordScoreForUpperGiBleedingWidget",
+      "name": "CalculatorGlasgowBlatchfordScoreForUpperGiBleedingWidget",
+      "label": "CalculatorGlasgowBlatchfordScoreForUpperGiBleedingWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorGlasgowComaScaleGcsWidget",
+      "name": "CalculatorGlasgowComaScaleGcsWidget",
+      "label": "CalculatorGlasgowComaScaleGcsWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorGraceScoreForAcuteCoronarySyndromeWidget",
+      "name": "CalculatorGraceScoreForAcuteCoronarySyndromeWidget",
+      "label": "CalculatorGraceScoreForAcuteCoronarySyndromeWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorHasBledScoreForMajorBleedingRiskWidget",
+      "name": "CalculatorHasBledScoreForMajorBleedingRiskWidget",
+      "label": "CalculatorHasBledScoreForMajorBleedingRiskWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorHeartScoreForMajorCardiacEventsWidget",
+      "name": "CalculatorHeartScoreForMajorCardiacEventsWidget",
+      "label": "CalculatorHeartScoreForMajorCardiacEventsWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorHuntAndHessScoreForSubarachnoidHemorrhageWidget",
+      "name": "CalculatorHuntAndHessScoreForSubarachnoidHemorrhageWidget",
+      "label": "CalculatorHuntAndHessScoreForSubarachnoidHemorrhageWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorIchScoreWidget",
+      "name": "CalculatorIchScoreWidget",
+      "label": "CalculatorIchScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorIsthDicScoreWidget",
+      "name": "CalculatorIsthDicScoreWidget",
+      "label": "CalculatorIsthDicScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorModifiedRankinScaleWidget",
+      "name": "CalculatorModifiedRankinScaleWidget",
+      "label": "CalculatorModifiedRankinScaleWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorNexusCervicalSpineRuleWidget",
+      "name": "CalculatorNexusCervicalSpineRuleWidget",
+      "label": "CalculatorNexusCervicalSpineRuleWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorNihStrokeScaleNihssWidget",
+      "name": "CalculatorNihStrokeScaleNihssWidget",
+      "label": "CalculatorNihStrokeScaleNihssWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorOttawaAnkleRuleWidget",
+      "name": "CalculatorOttawaAnkleRuleWidget",
+      "label": "CalculatorOttawaAnkleRuleWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorOttawaKneeRuleWidget",
+      "name": "CalculatorOttawaKneeRuleWidget",
+      "label": "CalculatorOttawaKneeRuleWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorPaduaPredictionScoreForVenousThromboembolismRiskWidget",
+      "name": "CalculatorPaduaPredictionScoreForVenousThromboembolismRiskWidget",
+      "label": "CalculatorPaduaPredictionScoreForVenousThromboembolismRiskWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorPecarnPediatricHeadInjuryRuleWidget",
+      "name": "CalculatorPecarnPediatricHeadInjuryRuleWidget",
+      "label": "CalculatorPecarnPediatricHeadInjuryRuleWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorPediatricEarlyWarningScorePewsWidget",
+      "name": "CalculatorPediatricEarlyWarningScorePewsWidget",
+      "label": "CalculatorPediatricEarlyWarningScorePewsWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorPercRuleForPulmonaryEmbolismWidget",
+      "name": "CalculatorPercRuleForPulmonaryEmbolismWidget",
+      "label": "CalculatorPercRuleForPulmonaryEmbolismWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorPneumoniaSeverityIndexPsiPortWidget",
+      "name": "CalculatorPneumoniaSeverityIndexPsiPortWidget",
+      "label": "CalculatorPneumoniaSeverityIndexPsiPortWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorQsofaScoreWidget",
+      "name": "CalculatorQsofaScoreWidget",
+      "label": "CalculatorQsofaScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorRansonCriteriaForPancreatitisWidget",
+      "name": "CalculatorRansonCriteriaForPancreatitisWidget",
+      "label": "CalculatorRansonCriteriaForPancreatitisWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorRevisedCardiacRiskIndexRcriWidget",
+      "name": "CalculatorRevisedCardiacRiskIndexRcriWidget",
+      "label": "CalculatorRevisedCardiacRiskIndexRcriWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorRevisedGenevaScoreForPulmonaryEmbolismWidget",
+      "name": "CalculatorRevisedGenevaScoreForPulmonaryEmbolismWidget",
+      "label": "CalculatorRevisedGenevaScoreForPulmonaryEmbolismWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorRochesterCriteriaForFebrileInfantsWidget",
+      "name": "CalculatorRochesterCriteriaForFebrileInfantsWidget",
+      "label": "CalculatorRochesterCriteriaForFebrileInfantsWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorRockallScoreForUpperGiBleedingWidget",
+      "name": "CalculatorRockallScoreForUpperGiBleedingWidget",
+      "label": "CalculatorRockallScoreForUpperGiBleedingWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorRoxIndexForHighFlowNasalCannulaWidget",
+      "name": "CalculatorRoxIndexForHighFlowNasalCannulaWidget",
+      "label": "CalculatorRoxIndexForHighFlowNasalCannulaWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorSirsCriteriaWidget",
+      "name": "CalculatorSirsCriteriaWidget",
+      "label": "CalculatorSirsCriteriaWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorSofaScoreWidget",
+      "name": "CalculatorSofaScoreWidget",
+      "label": "CalculatorSofaScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorStopBangScoreForObstructiveSleepApneaWidget",
+      "name": "CalculatorStopBangScoreForObstructiveSleepApneaWidget",
+      "label": "CalculatorStopBangScoreForObstructiveSleepApneaWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorSurgicalApgarScoreWidget",
+      "name": "CalculatorSurgicalApgarScoreWidget",
+      "label": "CalculatorSurgicalApgarScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorTimiRiskWidget",
+      "name": "CalculatorTimiRiskWidget",
+      "label": "CalculatorTimiRiskWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorWellsScoreForDeepVeinThrombosisWidget",
+      "name": "CalculatorWellsScoreForDeepVeinThrombosisWidget",
+      "label": "CalculatorWellsScoreForDeepVeinThrombosisWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorWellsScoreForPulmonaryEmbolismWidget",
+      "name": "CalculatorWellsScoreForPulmonaryEmbolismWidget",
+      "label": "CalculatorWellsScoreForPulmonaryEmbolismWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorWestleyCroupSeverityScoreWidget",
+      "name": "CalculatorWestleyCroupSeverityScoreWidget",
+      "label": "CalculatorWestleyCroupSeverityScoreWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorWidget",
+      "name": "CalculatorWidget",
+      "label": "CalculatorWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalculatorYearsAlgorithmForPulmonaryEmbolismWidget",
+      "name": "CalculatorYearsAlgorithmForPulmonaryEmbolismWidget",
+      "label": "CalculatorYearsAlgorithmForPulmonaryEmbolismWidget",
+      "layer": "host",
+      "category": "医疗评分（仅名称）",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalendarEventsWidget",
+      "name": "CalendarEventsWidget",
+      "label": "CalendarEventsWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CalendarList",
+      "name": "CalendarList",
+      "label": "CalendarList",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CareProviderResultsWidget",
+      "name": "CareProviderResultsWidget",
+      "label": "CareProviderResultsWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CareProviderSidebarWidget",
+      "name": "CareProviderSidebarWidget",
+      "label": "CareProviderSidebarWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CfbGames",
+      "name": "CfbGames",
+      "label": "CfbGames",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CfbGamesWidget",
+      "name": "CfbGamesWidget",
+      "label": "CfbGamesWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ChecklistWidget",
+      "name": "ChecklistWidget",
+      "label": "ChecklistWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ClockWidget",
+      "name": "ClockWidget",
+      "label": "ClockWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ConversationFollowUpActionList",
+      "name": "ConversationFollowUpActionList",
+      "label": "ConversationFollowUpActionList",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ConversationalOnboardingAdvice",
+      "name": "ConversationalOnboardingAdvice",
+      "label": "ConversationalOnboardingAdvice",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ConversationalOnboardingFollowUpPills",
+      "name": "ConversationalOnboardingFollowUpPills",
+      "label": "ConversationalOnboardingFollowUpPills",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ConversationalOnboardingSearch",
+      "name": "ConversationalOnboardingSearch",
+      "label": "ConversationalOnboardingSearch",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ConversationalOnboardingStudy",
+      "name": "ConversationalOnboardingStudy",
+      "label": "ConversationalOnboardingStudy",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ConversationalOnboardingWriting",
+      "name": "ConversationalOnboardingWriting",
+      "label": "ConversationalOnboardingWriting",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CopyWordsWidget",
+      "name": "CopyWordsWidget",
+      "label": "CopyWordsWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CricketMatchBoxscoreWidget",
+      "name": "CricketMatchBoxscoreWidget",
+      "label": "CricketMatchBoxscoreWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CricketSingleMatch",
+      "name": "CricketSingleMatch",
+      "label": "CricketSingleMatch",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CurrencyConverterV2Widget",
+      "name": "CurrencyConverterV2Widget",
+      "label": "CurrencyConverterV2Widget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CurrencyConverterV2WidgetWithSource",
+      "name": "CurrencyConverterV2WidgetWithSource",
+      "label": "CurrencyConverterV2WidgetWithSource",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CurrencyConverterWidget",
+      "name": "CurrencyConverterWidget",
+      "label": "CurrencyConverterWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:CurrencyConverterWidgetWithSource",
+      "name": "CurrencyConverterWidgetWithSource",
+      "label": "CurrencyConverterWidgetWithSource",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:DigitalStopwatchWidget",
+      "name": "DigitalStopwatchWidget",
+      "label": "DigitalStopwatchWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:DigitalTimerWidget",
+      "name": "DigitalTimerWidget",
+      "label": "DigitalTimerWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:DraftEmail",
+      "name": "DraftEmail",
+      "label": "DraftEmail",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ElectionInfo",
+      "name": "ElectionInfo",
+      "label": "ElectionInfo",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ElectionResults",
+      "name": "ElectionResults",
+      "label": "ElectionResults",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ElectionResultsWidget",
+      "name": "ElectionResultsWidget",
+      "label": "ElectionResultsWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EmailPreview",
+      "name": "EmailPreview",
+      "label": "EmailPreview",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EntityCard",
+      "name": "EntityCard",
+      "label": "EntityCard",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EntityExplorer",
+      "name": "EntityExplorer",
+      "label": "EntityExplorer",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EntityOverviewCarouselWidget",
+      "name": "EntityOverviewCarouselWidget",
+      "label": "EntityOverviewCarouselWidget",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EntityOverviewWidget",
+      "name": "EntityOverviewWidget",
+      "label": "EntityOverviewWidget",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EntityReviewsRefWidget",
+      "name": "EntityReviewsRefWidget",
+      "label": "EntityReviewsRefWidget",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EntityReviewsWidget",
+      "name": "EntityReviewsWidget",
+      "label": "EntityReviewsWidget",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EntityThumbnailList",
+      "name": "EntityThumbnailList",
+      "label": "EntityThumbnailList",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EplScheduleWidget",
+      "name": "EplScheduleWidget",
+      "label": "EplScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EplScheduleWidgetWithSource",
+      "name": "EplScheduleWidgetWithSource",
+      "label": "EplScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EplStandingsWidget",
+      "name": "EplStandingsWidget",
+      "label": "EplStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EplStandingsWidgetWithSource",
+      "name": "EplStandingsWidgetWithSource",
+      "label": "EplStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:EventSidebarWidget",
+      "name": "EventSidebarWidget",
+      "label": "EventSidebarWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ExampleServerActionButton",
+      "name": "ExampleServerActionButton",
+      "label": "ExampleServerActionButton",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:F1RacesWidget",
+      "name": "F1RacesWidget",
+      "label": "F1RacesWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:F1RacesWidgetWithSource",
+      "name": "F1RacesWidgetWithSource",
+      "label": "F1RacesWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:F1StandingsWidget",
+      "name": "F1StandingsWidget",
+      "label": "F1StandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:F1StandingsWidgetWithSource",
+      "name": "F1StandingsWidgetWithSource",
+      "label": "F1StandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FinanceOnboardingSuggestions",
+      "name": "FinanceOnboardingSuggestions",
+      "label": "FinanceOnboardingSuggestions",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FlightResults",
+      "name": "FlightResults",
+      "label": "FlightResults",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FlightSearchForm",
+      "name": "FlightSearchForm",
+      "label": "FlightSearchForm",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FlightTrackerWidget",
+      "name": "FlightTrackerWidget",
+      "label": "FlightTrackerWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FollowUpCardGroup",
+      "name": "FollowUpCardGroup",
+      "label": "FollowUpCardGroup",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FollowUpChoiceCard",
+      "name": "FollowUpChoiceCard",
+      "label": "FollowUpChoiceCard",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FollowUpLinkList",
+      "name": "FollowUpLinkList",
+      "label": "FollowUpLinkList",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FollowUpPillGroup",
+      "name": "FollowUpPillGroup",
+      "label": "FollowUpPillGroup",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:FollowUpQuiz",
+      "name": "FollowUpQuiz",
+      "label": "FollowUpQuiz",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Gpt4oSystemCard",
+      "name": "Gpt4oSystemCard",
+      "label": "Gpt4oSystemCard",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Gpt5SystemCard",
+      "name": "Gpt5SystemCard",
+      "label": "Gpt5SystemCard",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:HolidayWidget",
+      "name": "HolidayWidget",
+      "label": "HolidayWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:HomeworkHelperV2",
+      "name": "HomeworkHelperV2",
+      "label": "HomeworkHelperV2",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ImageGenWidget",
+      "name": "ImageGenWidget",
+      "label": "ImageGenWidget",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ImageGrid",
+      "name": "ImageGrid",
+      "label": "ImageGrid",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:InstantSuggestionsWidget",
+      "name": "InstantSuggestionsWidget",
+      "label": "InstantSuggestionsWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:InternalPartnerAppWidget",
+      "name": "InternalPartnerAppWidget",
+      "label": "InternalPartnerAppWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:IplScheduleWidget",
+      "name": "IplScheduleWidget",
+      "label": "IplScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:IplScheduleWidgetWithSource",
+      "name": "IplScheduleWidgetWithSource",
+      "label": "IplScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:IplStandingsWidget",
+      "name": "IplStandingsWidget",
+      "label": "IplStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:IplStandingsWidgetWithSource",
+      "name": "IplStandingsWidgetWithSource",
+      "label": "IplStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:JobsWidget",
+      "name": "JobsWidget",
+      "label": "JobsWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningAudioLabelCard",
+      "name": "LearningAudioLabelCard",
+      "label": "LearningAudioLabelCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningFillBlankCard",
+      "name": "LearningFillBlankCard",
+      "label": "LearningFillBlankCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningFlashcards",
+      "name": "LearningFlashcards",
+      "label": "LearningFlashcards",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningImageChoiceCard",
+      "name": "LearningImageChoiceCard",
+      "label": "LearningImageChoiceCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningImageLabelCard",
+      "name": "LearningImageLabelCard",
+      "label": "LearningImageLabelCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningQuiz",
+      "name": "LearningQuiz",
+      "label": "LearningQuiz",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningSentenceBuilderCard",
+      "name": "LearningSentenceBuilderCard",
+      "label": "LearningSentenceBuilderCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningSpeakCard",
+      "name": "LearningSpeakCard",
+      "label": "LearningSpeakCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningVocabCard",
+      "name": "LearningVocabCard",
+      "label": "LearningVocabCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LearningVoiceModeLauncherCard",
+      "name": "LearningVoiceModeLauncherCard",
+      "label": "LearningVoiceModeLauncherCard",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerAccountBreakdownWidget",
+      "name": "LedgerAccountBreakdownWidget",
+      "label": "LedgerAccountBreakdownWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerAccountsWidget",
+      "name": "LedgerAccountsWidget",
+      "label": "LedgerAccountsWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerCreditScoreDetail",
+      "name": "LedgerCreditScoreDetail",
+      "label": "LedgerCreditScoreDetail",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerCreditScoreDetailWidget",
+      "name": "LedgerCreditScoreDetailWidget",
+      "label": "LedgerCreditScoreDetailWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerCreditScoreWidget",
+      "name": "LedgerCreditScoreWidget",
+      "label": "LedgerCreditScoreWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerEquityUpdatesWidget",
+      "name": "LedgerEquityUpdatesWidget",
+      "label": "LedgerEquityUpdatesWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerFeeInterestPaidWidget",
+      "name": "LedgerFeeInterestPaidWidget",
+      "label": "LedgerFeeInterestPaidWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerFinanceOnboardingWidget",
+      "name": "LedgerFinanceOnboardingWidget",
+      "label": "LedgerFinanceOnboardingWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerFinanceStatusBannerWidget",
+      "name": "LedgerFinanceStatusBannerWidget",
+      "label": "LedgerFinanceStatusBannerWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerIncomeTrackerWidget",
+      "name": "LedgerIncomeTrackerWidget",
+      "label": "LedgerIncomeTrackerWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerLowConfidenceCategoryCorrection",
+      "name": "LedgerLowConfidenceCategoryCorrection",
+      "label": "LedgerLowConfidenceCategoryCorrection",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerLowConfidenceCategoryCorrectionCombinedWidget",
+      "name": "LedgerLowConfidenceCategoryCorrectionCombinedWidget",
+      "label": "LedgerLowConfidenceCategoryCorrectionCombinedWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerLowConfidenceCategoryCorrectionLegacyWidget",
+      "name": "LedgerLowConfidenceCategoryCorrectionLegacyWidget",
+      "label": "LedgerLowConfidenceCategoryCorrectionLegacyWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerNetWorthWidget",
+      "name": "LedgerNetWorthWidget",
+      "label": "LedgerNetWorthWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerPortfolioDistributionWidget",
+      "name": "LedgerPortfolioDistributionWidget",
+      "label": "LedgerPortfolioDistributionWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerRecentTransactionsUpcomingActivityWidget",
+      "name": "LedgerRecentTransactionsUpcomingActivityWidget",
+      "label": "LedgerRecentTransactionsUpcomingActivityWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerRecentTransactionsWidget",
+      "name": "LedgerRecentTransactionsWidget",
+      "label": "LedgerRecentTransactionsWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerRecurringTransactionsWidget",
+      "name": "LedgerRecurringTransactionsWidget",
+      "label": "LedgerRecurringTransactionsWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerRepairBankConnectionWidget",
+      "name": "LedgerRepairBankConnectionWidget",
+      "label": "LedgerRepairBankConnectionWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerSpendByCategoryDetail",
+      "name": "LedgerSpendByCategoryDetail",
+      "label": "LedgerSpendByCategoryDetail",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerSpendByCategoryDetailWidget",
+      "name": "LedgerSpendByCategoryDetailWidget",
+      "label": "LedgerSpendByCategoryDetailWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerSpendByCategoryRecentTransactions",
+      "name": "LedgerSpendByCategoryRecentTransactions",
+      "label": "LedgerSpendByCategoryRecentTransactions",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerSpendByCategoryRecentTransactionsWidget",
+      "name": "LedgerSpendByCategoryRecentTransactionsWidget",
+      "label": "LedgerSpendByCategoryRecentTransactionsWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerSpendByCategoryWidget",
+      "name": "LedgerSpendByCategoryWidget",
+      "label": "LedgerSpendByCategoryWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerSpendSoFarThisMonthWidget",
+      "name": "LedgerSpendSoFarThisMonthWidget",
+      "label": "LedgerSpendSoFarThisMonthWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerTransactionDetail",
+      "name": "LedgerTransactionDetail",
+      "label": "LedgerTransactionDetail",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerTransactionDetailWidget",
+      "name": "LedgerTransactionDetailWidget",
+      "label": "LedgerTransactionDetailWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerUpcomingActivityRecentTransactions",
+      "name": "LedgerUpcomingActivityRecentTransactions",
+      "label": "LedgerUpcomingActivityRecentTransactions",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerUpcomingActivityWidget",
+      "name": "LedgerUpcomingActivityWidget",
+      "label": "LedgerUpcomingActivityWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LedgerWatchlistWidget",
+      "name": "LedgerWatchlistWidget",
+      "label": "LedgerWatchlistWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ListAutomations",
+      "name": "ListAutomations",
+      "label": "ListAutomations",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LocalBusinessWidget",
+      "name": "LocalBusinessWidget",
+      "label": "LocalBusinessWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LyricsWidget",
+      "name": "LyricsWidget",
+      "label": "LyricsWidget",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:LyricsWidgetWithSource",
+      "name": "LyricsWidgetWithSource",
+      "label": "LyricsWidgetWithSource",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MarchMadness",
+      "name": "MarchMadness",
+      "label": "MarchMadness",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MlbScheduleWidget",
+      "name": "MlbScheduleWidget",
+      "label": "MlbScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MlbScheduleWidgetWithSource",
+      "name": "MlbScheduleWidgetWithSource",
+      "label": "MlbScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MlbStandingsWidget",
+      "name": "MlbStandingsWidget",
+      "label": "MlbStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MlbStandingsWidgetWithSource",
+      "name": "MlbStandingsWidgetWithSource",
+      "label": "MlbStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:MultipleChoiceBlockV2",
+      "name": "MultipleChoiceBlockV2",
+      "label": "MultipleChoiceBlockV2",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaGameBoxscoreWidget",
+      "name": "NbaGameBoxscoreWidget",
+      "label": "NbaGameBoxscoreWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaGameBoxscoreWidgetWithNbaGameBoxScoreSource",
+      "name": "NbaGameBoxscoreWidgetWithNbaGameBoxScoreSource",
+      "label": "NbaGameBoxscoreWidgetWithNbaGameBoxScoreSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaPlayerSummaryWidget",
+      "name": "NbaPlayerSummaryWidget",
+      "label": "NbaPlayerSummaryWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaPlayerSummaryWidgetWithSource",
+      "name": "NbaPlayerSummaryWidgetWithSource",
+      "label": "NbaPlayerSummaryWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaScheduleWidget",
+      "name": "NbaScheduleWidget",
+      "label": "NbaScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaScheduleWidgetWithSource",
+      "name": "NbaScheduleWidgetWithSource",
+      "label": "NbaScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaScores",
+      "name": "NbaScores",
+      "label": "NbaScores",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaScoresWidget",
+      "name": "NbaScoresWidget",
+      "label": "NbaScoresWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaStandingsWidget",
+      "name": "NbaStandingsWidget",
+      "label": "NbaStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NbaStandingsWidgetWithSource",
+      "name": "NbaStandingsWidgetWithSource",
+      "label": "NbaStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaambScheduleWidget",
+      "name": "NcaambScheduleWidget",
+      "label": "NcaambScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaambScheduleWidgetWithSource",
+      "name": "NcaambScheduleWidgetWithSource",
+      "label": "NcaambScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaambStandingsWidget",
+      "name": "NcaambStandingsWidget",
+      "label": "NcaambStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaambStandingsWidgetWithSource",
+      "name": "NcaambStandingsWidgetWithSource",
+      "label": "NcaambStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaawbScheduleWidget",
+      "name": "NcaawbScheduleWidget",
+      "label": "NcaawbScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaawbScheduleWidgetWithSource",
+      "name": "NcaawbScheduleWidgetWithSource",
+      "label": "NcaawbScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaawbStandingsWidget",
+      "name": "NcaawbStandingsWidget",
+      "label": "NcaawbStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NcaawbStandingsWidgetWithSource",
+      "name": "NcaawbStandingsWidgetWithSource",
+      "label": "NcaawbStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NewsArticleWidget",
+      "name": "NewsArticleWidget",
+      "label": "NewsArticleWidget",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NewsArticleWidgetCarousel",
+      "name": "NewsArticleWidgetCarousel",
+      "label": "NewsArticleWidgetCarousel",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NflGames",
+      "name": "NflGames",
+      "label": "NflGames",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NflGamesWidget",
+      "name": "NflGamesWidget",
+      "label": "NflGamesWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NflScheduleWidget",
+      "name": "NflScheduleWidget",
+      "label": "NflScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NflScheduleWidgetWithSource",
+      "name": "NflScheduleWidgetWithSource",
+      "label": "NflScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NflStandingsWidget",
+      "name": "NflStandingsWidget",
+      "label": "NflStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NflStandingsWidgetWithSource",
+      "name": "NflStandingsWidgetWithSource",
+      "label": "NflStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NhlScheduleWidget",
+      "name": "NhlScheduleWidget",
+      "label": "NhlScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NhlScheduleWidgetWithSource",
+      "name": "NhlScheduleWidgetWithSource",
+      "label": "NhlScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NhlStandingsWidget",
+      "name": "NhlStandingsWidget",
+      "label": "NhlStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:NhlStandingsWidgetWithSource",
+      "name": "NhlStandingsWidgetWithSource",
+      "label": "NhlStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OfferScheduledPrompt",
+      "name": "OfferScheduledPrompt",
+      "label": "OfferScheduledPrompt",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OfferSiteSchedule",
+      "name": "OfferSiteSchedule",
+      "label": "OfferSiteSchedule",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OfferVoiceConversation",
+      "name": "OfferVoiceConversation",
+      "label": "OfferVoiceConversation",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OnboardingFeatureCard",
+      "name": "OnboardingFeatureCard",
+      "label": "OnboardingFeatureCard",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OnboardingPluginSuggestions",
+      "name": "OnboardingPluginSuggestions",
+      "label": "OnboardingPluginSuggestions",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OnboardingSelectionCard",
+      "name": "OnboardingSelectionCard",
+      "label": "OnboardingSelectionCard",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OnboardingText",
+      "name": "OnboardingText",
+      "label": "OnboardingText",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OpenDetailWidget",
+      "name": "OpenDetailWidget",
+      "label": "OpenDetailWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OpenLearningFlashcards",
+      "name": "OpenLearningFlashcards",
+      "label": "OpenLearningFlashcards",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:OpenaiWidget",
+      "name": "OpenaiWidget",
+      "label": "OpenaiWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PackageTracker",
+      "name": "PackageTracker",
+      "label": "PackageTracker",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PackageTrackerWidget",
+      "name": "PackageTrackerWidget",
+      "label": "PackageTrackerWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersistedWidgetDogfoodChecklistWidgetWithSource",
+      "name": "PersistedWidgetDogfoodChecklistWidgetWithSource",
+      "label": "PersistedWidgetDogfoodChecklistWidgetWithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersistedWidgetDogfoodDailyNutritionWidgetWithSource",
+      "name": "PersistedWidgetDogfoodDailyNutritionWidgetWithSource",
+      "label": "PersistedWidgetDogfoodDailyNutritionWidgetWithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersistedWidgetDogfoodExerciseLogWidgetWithSource",
+      "name": "PersistedWidgetDogfoodExerciseLogWidgetWithSource",
+      "label": "PersistedWidgetDogfoodExerciseLogWidgetWithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersistedWidgetDogfoodGoalWidgetWithSource",
+      "name": "PersistedWidgetDogfoodGoalWidgetWithSource",
+      "label": "PersistedWidgetDogfoodGoalWidgetWithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersonBento",
+      "name": "PersonBento",
+      "label": "PersonBento",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersonBentoAlwaysTrigger",
+      "name": "PersonBentoAlwaysTrigger",
+      "label": "PersonBentoAlwaysTrigger",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersonWidget",
+      "name": "PersonWidget",
+      "label": "PersonWidget",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PersonWidgetAlwaysTrigger",
+      "name": "PersonWidgetAlwaysTrigger",
+      "label": "PersonWidgetAlwaysTrigger",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PlacesMetadataBar",
+      "name": "PlacesMetadataBar",
+      "label": "PlacesMetadataBar",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PluginFollowup",
+      "name": "PluginFollowup",
+      "label": "PluginFollowup",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ProductCarousel",
+      "name": "ProductCarousel",
+      "label": "ProductCarousel",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PromptChecklist",
+      "name": "PromptChecklist",
+      "label": "PromptChecklist",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PulseDraftEmail",
+      "name": "PulseDraftEmail",
+      "label": "PulseDraftEmail",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PulseExpansionCard",
+      "name": "PulseExpansionCard",
+      "label": "PulseExpansionCard",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:PushDripSeriesIntro",
+      "name": "PushDripSeriesIntro",
+      "label": "PushDripSeriesIntro",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Rating",
+      "name": "Rating",
+      "label": "Rating",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:RecommendationCard",
+      "name": "RecommendationCard",
+      "label": "RecommendationCard",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:RecommendationLinkCard",
+      "name": "RecommendationLinkCard",
+      "label": "RecommendationLinkCard",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:Reddit",
+      "name": "Reddit",
+      "label": "Reddit",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:RedditFromProductSearch",
+      "name": "RedditFromProductSearch",
+      "label": "RedditFromProductSearch",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:RedditFromSearch",
+      "name": "RedditFromSearch",
+      "label": "RedditFromSearch",
+      "layer": "host",
+      "category": "媒体内容与写作",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ReservationTimePillsRefCarouselWidget",
+      "name": "ReservationTimePillsRefCarouselWidget",
+      "label": "ReservationTimePillsRefCarouselWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:ReservationTimePillsRefWidget",
+      "name": "ReservationTimePillsRefWidget",
+      "label": "ReservationTimePillsRefWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:RestaurantMenuRefWidget",
+      "name": "RestaurantMenuRefWidget",
+      "label": "RestaurantMenuRefWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:RestaurantMenuWidget",
+      "name": "RestaurantMenuWidget",
+      "label": "RestaurantMenuWidget",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:RestaurantReviews",
+      "name": "RestaurantReviews",
+      "label": "RestaurantReviews",
+      "layer": "host",
+      "category": "地点旅行与服务",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:SidebarFactTable",
+      "name": "SidebarFactTable",
+      "label": "SidebarFactTable",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:SidebarPeopleAlsoAsk",
+      "name": "SidebarPeopleAlsoAsk",
+      "label": "SidebarPeopleAlsoAsk",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:SoccerGames",
+      "name": "SoccerGames",
+      "label": "SoccerGames",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:SoccerGamesWidget",
+      "name": "SoccerGamesWidget",
+      "label": "SoccerGamesWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:StockChart",
+      "name": "StockChart",
+      "label": "StockChart",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:StockComparisonChart",
+      "name": "StockComparisonChart",
+      "label": "StockComparisonChart",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:StockHeatmap",
+      "name": "StockHeatmap",
+      "label": "StockHeatmap",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:StockHeatmapWidget",
+      "name": "StockHeatmapWidget",
+      "label": "StockHeatmapWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:StockQuoteComparisonWidget",
+      "name": "StockQuoteComparisonWidget",
+      "label": "StockQuoteComparisonWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:StockQuoteWidget",
+      "name": "StockQuoteWidget",
+      "label": "StockQuoteWidget",
+      "layer": "host",
+      "category": "金融与账本",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:StopPushDripSeries",
+      "name": "StopPushDripSeries",
+      "label": "StopPushDripSeries",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:SuggestAutomation",
+      "name": "SuggestAutomation",
+      "label": "SuggestAutomation",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:SuperbowlRiddleWidget",
+      "name": "SuperbowlRiddleWidget",
+      "label": "SuperbowlRiddleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:TabGroup",
+      "name": "TabGroup",
+      "label": "TabGroup",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:TabbedSectionWidget",
+      "name": "TabbedSectionWidget",
+      "label": "TabbedSectionWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:TaskAutopauseCard",
+      "name": "TaskAutopauseCard",
+      "label": "TaskAutopauseCard",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:TaskExpansionCard",
+      "name": "TaskExpansionCard",
+      "label": "TaskExpansionCard",
+      "layer": "host",
+      "category": "任务与自动化",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:TennisPlayerSummaryWidget",
+      "name": "TennisPlayerSummaryWidget",
+      "label": "TennisPlayerSummaryWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:TennisPlayerSummaryWidgetWithSource",
+      "name": "TennisPlayerSummaryWidgetWithSource",
+      "label": "TennisPlayerSummaryWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:UnitConverterV2Widget",
+      "name": "UnitConverterV2Widget",
+      "label": "UnitConverterV2Widget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:UnitConverterWidget",
+      "name": "UnitConverterWidget",
+      "label": "UnitConverterWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:UpdateLearningFlashcards",
+      "name": "UpdateLearningFlashcards",
+      "label": "UpdateLearningFlashcards",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:VisualCardCarouselWidget",
+      "name": "VisualCardCarouselWidget",
+      "label": "VisualCardCarouselWidget",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherCurrentWithSource",
+      "name": "WeatherCurrentWithSource",
+      "label": "WeatherCurrentWithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherSidebarTitleWidget",
+      "name": "WeatherSidebarTitleWidget",
+      "label": "WeatherSidebarTitleWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherSidebarTitleWidgetWithSource",
+      "name": "WeatherSidebarTitleWidgetWithSource",
+      "label": "WeatherSidebarTitleWidgetWithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherWidget",
+      "name": "WeatherWidget",
+      "label": "WeatherWidget",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherWidgetV1WithSource",
+      "name": "WeatherWidgetV1WithSource",
+      "label": "WeatherWidgetV1WithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherWidgetV3",
+      "name": "WeatherWidgetV3",
+      "label": "WeatherWidgetV3",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherWidgetV3WithSource",
+      "name": "WeatherWidgetV3WithSource",
+      "label": "WeatherWidgetV3WithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WeatherWidgetWithSource",
+      "name": "WeatherWidgetWithSource",
+      "label": "WeatherWidgetWithSource",
+      "layer": "host",
+      "category": "生活效率",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WebLinksCarousel",
+      "name": "WebLinksCarousel",
+      "label": "WebLinksCarousel",
+      "layer": "host",
+      "category": "引用实体与推荐",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WhatsNewCapabilityWelcome",
+      "name": "WhatsNewCapabilityWelcome",
+      "label": "WhatsNewCapabilityWelcome",
+      "layer": "host",
+      "category": "宿主交互与系统",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WnbaScheduleWidget",
+      "name": "WnbaScheduleWidget",
+      "label": "WnbaScheduleWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WnbaScheduleWidgetWithSource",
+      "name": "WnbaScheduleWidgetWithSource",
+      "label": "WnbaScheduleWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WnbaStandingsWidget",
+      "name": "WnbaStandingsWidget",
+      "label": "WnbaStandingsWidget",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WnbaStandingsWidgetWithSource",
+      "name": "WnbaStandingsWidgetWithSource",
+      "label": "WnbaStandingsWidgetWithSource",
+      "layer": "host",
+      "category": "体育赛事",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    },
+    {
+      "id": "host:WordCardWidget",
+      "name": "WordCardWidget",
+      "label": "WordCardWidget",
+      "layer": "host",
+      "category": "学习与测验",
+      "categoryEvidence": "name-inference",
+      "evidence": "public-allowlist",
+      "sourceIds": [
+        "public-runner"
+      ],
+      "loading": "lazy",
+      "availability": "reference",
+      "localTag": null,
+      "scopeNote": "名称来自运行时白名单；用途分类仅根据名称归类。没有原始属性 schema、服务数据或实际调用证据，不当作已接入功能。"
+    }
+  ]
+}

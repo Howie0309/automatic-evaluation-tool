@@ -4,3 +4,8 @@ node_modules/
 .env.deploy
 *.log
 data/
+backups/
+*.zip
+AI-Lens-local/
+**/*preview*.png
+seed-demo/oneapi-settings.png

@@ -1,0 +1,5 @@
+.env
+.local-config.json*
+.local-search.json*
+*.log
+.DS_Store

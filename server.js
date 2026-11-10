@@ -196,6 +196,6 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, process.env.JUDGE_HOST || '0.0.0.0', () => {
   console.log(`Judge Studio running at http://localhost:${port}`);
 });

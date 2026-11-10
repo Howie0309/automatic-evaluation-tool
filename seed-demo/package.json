@@ -1,0 +1,13 @@
+{
+  "name": "seed-demo-local",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test oneapi.test.js components.test.js search.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

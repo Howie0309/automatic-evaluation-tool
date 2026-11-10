@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f8f9fb"><title>评估工作台 · Eval Space</title><link rel="stylesheet" href="/styles.css"></head>
+<body>
+<aside class="sidebar">
+  <a href="#home" class="brand"><span class="brand-mark">e<span>·</span></span><span>评估工作台<small>EVAL SPACE</small></span></a>
+  <div class="workspace-switch"><span class="workspace-icon">Y</span><span>我的工作空间<small>个人版 · 本地运行</small></span><span class="local-dot"></span></div>
+  <div class="nav-label">工作空间</div>
+  <nav aria-label="主导航" id="nav-main"></nav>
+  <div class="nav-label tools-label">评估工具 <span id="tool-count">03</span></div>
+  <nav aria-label="评估工具" id="nav-tools"></nav>
+  <div class="sidebar-bottom"><button class="nav-item sidebar-action" id="refresh" aria-label="刷新数据" title="刷新数据"><span data-icon="refresh"></span><span class="nav-text">刷新数据</span></button><a href="#settings" class="nav-item" data-nav="settings"><span data-icon="settings"></span>设置与环境</a><div class="local-note"><span class="local-dot"></span><span>数据保存在你的电脑上<small>Local workspace · v0.1</small></span></div></div>
+</aside>
+<div class="app-shell">
+  <main id="main" tabindex="-1"></main>
+  <section id="tool-workspace" hidden aria-label="工具工作区"><div id="tool-toolbar"></div><div id="tool-frames"></div></section>
+</div>
+<dialog id="project-dialog"><form id="project-form"><div class="dialog-heading"><div><span class="eyebrow">YOUR NEXT EXPLORATION</span><h2>创建新项目</h2></div><button type="button" class="icon-button" data-close aria-label="关闭">×</button></div><p class="muted">把同一项研究的评估记录和截图批次放在一起。</p><label>项目名称<input name="name" required maxlength="100" placeholder="例如：新版本回答质量评估" autocomplete="off"></label><label>项目说明 <span class="muted">（选填）</span><textarea name="description" rows="3" maxlength="1000" placeholder="这次想验证什么？"></textarea></label><div class="dialog-footer"><button type="button" class="button" data-close>取消</button><button class="button primary" type="submit">创建项目 <span data-icon="arrow"></span></button></div></form></dialog>
+<dialog id="link-dialog"><div class="dialog-heading"><h2>关联已有记录</h2><button class="icon-button" data-close aria-label="关闭">×</button></div><p class="muted">选择属于这个项目的自动评估或截图批次。</p><div id="link-records"></div><div class="dialog-footer"><button class="button" data-close>取消</button><button class="button primary" id="save-links">保存关联</button></div></dialog>
+<dialog id="logs-dialog"><div class="dialog-heading"><h2>运行日志</h2><button class="icon-button" data-close aria-label="关闭">×</button></div><div id="logs-content"></div></dialog>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<script type="module" src="/app.js"></script>
+</body></html>
