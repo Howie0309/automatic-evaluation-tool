@@ -101,7 +101,9 @@ export async function sendQuery(page, { buttonTimeout = 12000, confirmationTimeo
   if (!button) throw new Error('发送按钮未就绪，请检查页面登录状态或输入框；手机视图不能用回车代替发送');
   // Click once. Retrying the click can submit the same query twice when the
   // response or conversation navigation is slow.
-  await button.click();
+  // force: visibility/enabled are checked above; Playwright's stability wait can
+  // hang for 30s on reused pages even though the button is clickable.
+  await button.click({ force: true });
   const confirmationDeadline = Date.now() + confirmationTimeout;
   while (Date.now() < confirmationDeadline) {
     if (await page.locator(SEL.turn).count() > before) return;
